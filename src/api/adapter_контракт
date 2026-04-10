@@ -1,25 +1,21 @@
 {
-  "agent_id": "adapter",
-  "status": "string", //ready or extra_question
-  "payload": {
-    "display_text": "string",  // Текст для пользователя если нужен доп вопрос
-    "refined_prompt": "string" // Тщательно прописанное ТЗ для Генератора
+  "header": {
+    "source_agent": "string",     // "adapter" | "generator" | "validator"
+    "request_id": "uuid",         // Тот самый из входного контракта
+    "timestamp": 1712850000,      // для замеров
+    "status": "string"            // "success" | "error" | "clarification"
+  },
+  "payload": { 
+      "display_text": "string",  // Вопрос пользователю или статус готовности
+      "refined_prompt": "string", // Готовое ТЗ для генератора (улучшает запрос пользователя для генератора) (null, если статус "clarification")
+      "is_ready": "boolean"      // Удобный флаг для оркестратора
   },
   "metadata": {
-    "common": {
-      "request_id": "uuid-v4-string", //вроде полезно но хз
-      "timestamp": 1712850000, // потом для замеров
-      "duration_ms": 450 //замеры
-    },
-    "llm": {
-      "model_name": "qwen2.5:7b", //лучше явно указать
-      "temperature": 0.3, // параметры Ml
-      "prompt_tokens": 120, //Для валидатора потом
-      "completion_tokens": 45, //Для валидатора
-      "total_tokens": 165 //Валидатор
-    },
-    "validation": {
-      "confidence_score": 0.95, //Валидатор
+    "model": "qwen2.5:7b",     // лучше явно указать
+    "usage": {
+      "total_tokens": 0,
+      "duration_ms": 0
     }
-  }
+  },
+  "error": null // Сюда пишем объект ошибки, если статус "error"
 }
