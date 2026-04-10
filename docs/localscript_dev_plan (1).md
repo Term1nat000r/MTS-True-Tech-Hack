@@ -1,7 +1,3 @@
-![agents_combined_v2 (1)](https://github.com/user-attachments/assets/9b066b70-2a9d-4ab9-8c7d-d7a653978675)![agent2_v2 (1)](https://github.com/user-attachments/assets/70eab624-433e-4bdf-ab7f-3535186fbdfa)![Архитектура продукта](https://github.com/user-attachments/assets/e0dc6854-0e75-48ba-a1f2-848f018ac213)# LocalScript — План разработки
-![Uploading agent2_v2 (1).svg…]()
-![agent2_v2 (1)](https://github.com/user-attachments/assets/935194d7-1740-45f0-b3f8-709c61227289)
-
 > Локальная агентская система для генерации Lua-кода
 > Команда: **2 ML-инженера + 1 Backend-разработчик**
 > Стек: Python + Ollama (`qwen2.5-coder:7b`) + FastAPI + Docker
@@ -56,6 +52,20 @@ flowchart TB
     style Agents fill:#2a3a4a,stroke:#6bb6ff,color:#fff
     style Ollama fill:#3a2a4a,stroke:#b66bff,color:#fff
 ```
+
+# Архитектура LocalScript
+
+### Общая архитектура продукта
+![Архитектура продукта](<docs/Архитектура продукта.svg>)
+
+### Агент 1 — Генератор
+![Агент 1](docs/agent1_v2.svg)
+
+### Агент 2 — Критик
+![Агент 2](docs/agent2_v2.svg)
+
+### Объединенная схема
+![Объединенная схема агентов](docs/agents_combined_v2.svg)
 
 **Ключевые принципы:**
 - Всё работает локально, никаких внешних API в runtime.
