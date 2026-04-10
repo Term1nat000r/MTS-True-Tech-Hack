@@ -1,0 +1,25 @@
+{
+  "agent_id": "requester",
+  "status": "string", //ready or extra_question
+  "payload": {
+    "display_text": "string",  // Текст для пользователя
+    "refined_prompt": "string" // Тщательно прописанное ТЗ для Генератора
+  },
+  "metadata": {
+    "common": {
+      "request_id": "uuid-v4-string", //вроде полезно но хз
+      "timestamp": 1712850000, // потом для замеров
+      "duration_ms": 450 //замеры
+    },
+    "llm": {
+      "model_name": "qwen2.5:7b", //лучше явно указать
+      "temperature": 0.3, // параметры Ml
+      "prompt_tokens": 120, //Для валидатора потом
+      "completion_tokens": 45, //Для валидатора
+      "total_tokens": 165 //Валидатор
+    },
+    "validation": {
+      "confidence_score": 0.95, //Валидатор
+    }
+  }
+}
