@@ -1,28 +1,21 @@
 {
-  "agent_id": "generator",
-  "status": "success", // "success" | "error"
-  "payload": {
-    "content": "string",      // Только результат (код/текст)
-    "explanation": "string",  // Мысли модели: что и почему сделано. Метод, библиотека
+  "header": {
+    "source_agent": "string",     // "adapter" | "generator" | "validator"
+    "request_id": "uuid",         // Тот самый из входного контракта
+    "timestamp": 1712850000,
+    "status": "string"            // "success" | "error" | "clarification"
   },
-  "error": {
-    "code": "string",         // Например: "TIMEOUT", "CONTEXT_LENGTH_EXCEEDED"
-    "message": "string"       // Понятное описание ошибки
+  "payload": { 
+      "content": "string",       // Код на Lua или текст ответа
+      "explanation": "string",   // "Я добавил это, потому что..."
+      "language": "lua"          // Чтобы Arch понял, как подсветить код
   },
   "metadata": {
-    "context": {   //наверное для чего-то надо
-      "request_id": "uuid",
-      "parent_id": "uuid",    // ID промпта от Refiner
-      "timestamp": 1712850100
-    },
-    "model_config": {
-      "name": "qwen2.5:7b",
-      "temperature": 0.7,
-      "seed": 42
-    },
+    "model": "qwen2.5:7b",
     "usage": {
-      "total_tokens": 450,
-      "tps": 25.4,            // Скорость (tokens per second)
+      "total_tokens": 0,
+      "duration_ms": 0
     }
-  }
+  },
+  "error": null // Сюда пишем объект ошибки, если статус "error"
 }
