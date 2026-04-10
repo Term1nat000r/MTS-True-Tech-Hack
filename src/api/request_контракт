@@ -1,0 +1,9 @@
+{
+  "request_id": "uuid",
+  "raw_prompt": "string", 
+  "settings": {
+    "target_language": "ru", // или "en"
+    "mode": "code_generation", // или "chat", "analysis"
+    "stream": false
+  },
+}
