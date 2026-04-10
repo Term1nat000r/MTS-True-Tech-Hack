@@ -53,20 +53,6 @@ flowchart TB
     style Ollama fill:#3a2a4a,stroke:#b66bff,color:#fff
 ```
 
-# Архитектура LocalScript
-
-### Общая архитектура продукта
-![Архитектура продукта](<docs/Архитектура продукта.svg>)
-
-### Агент 1 — Генератор
-![Агент 1](docs/agent1_v2.svg)
-
-### Агент 2 — Критик
-![Агент 2](docs/agent2_v2.svg)
-
-### Объединенная схема
-![Объединенная схема агентов](docs/agents_combined_v2.svg)
-
 **Ключевые принципы:**
 - Всё работает локально, никаких внешних API в runtime.
 - Единственная точка общения с LLM — `LLM-клиент`, через него проходят оба агента.
@@ -550,4 +536,13 @@ gantt
 **BE (Инфраструктура):** Контракты данных, LLM-клиент, оркестратор, API, веб-интерфейс, Docker, C4-диаграммы.
 
 **Вся команда:** Этап 1 (контракты), Этап 7 (интеграция), финальная шлифовка.
+
+
+![Архитектура продукта (1)](https://github.com/user-attachments/assets/898a6ed4-d145-42e1-bb8a-a8c4ed2d3462)
+
+![agent1_v2 (1)](https://github.com/user-attachments/assets/bce6bb3e-acd5-4456-8375-7a07d5e071db)
+
+![agent2_v2 (1)](https://github.com/user-attachments/assets/b3e7a00d-678f-4f3e-ab13-e229bffb9e07)
+
+![agents_combined_v2 (1)](https://github.com/user-attachments/assets/e332888a-e97f-4003-97e6-f5e089a2b374)
 
