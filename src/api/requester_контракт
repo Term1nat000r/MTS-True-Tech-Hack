@@ -2,7 +2,7 @@
   "agent_id": "requester",
   "status": "string", //ready or extra_question
   "payload": {
-    "display_text": "string",  // Текст для пользователя
+    "display_text": "string",  // Текст для пользователя если нужен доп вопрос
     "refined_prompt": "string" // Тщательно прописанное ТЗ для Генератора
   },
   "metadata": {
