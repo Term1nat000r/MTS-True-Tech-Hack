@@ -1,0 +1,23 @@
+// На вход есть идея сделать единый контракт для удобства, на вывод уже разные
+{
+  "context": {
+    "session_id": "uuid",
+    "request_id": "uuid",
+    "timestamp": 1712850000,
+  },
+  "agent_config": {
+    "target": "adapter", // или "generator"
+    "model": "qwen2.5:7b",
+    "parameters": {
+      "temperature": 0.5, // ML настройка
+      "stop_tokens": ["\n"]
+    }
+  },
+  "data": {
+    "input_text": "string", // Тут либо сырой промпт, либо ТЗ от рефайнера
+    "history": [
+      {"role": "user", "content": "..."},
+      {"role": "assistant", "content": "..."}
+    ]
+  }
+}
