@@ -1,0 +1,12 @@
+{
+  "session_id": "uuid",
+  "agent_target": "refiner", // или "generator"
+  "input_data": "string",    // Тут либо raw_prompt, либо refined_task
+  "history": [               // Список прошлых сообщений для памяти (это мега важный пункт)
+    {"role": "user", "content": "..."},
+    {"role": "assistant", "content": "..."}
+  ],
+  "overrides": {             // Если хотим поменять настройки на лету (ML параметр)
+    "temperature": 0.5
+  }
+}
