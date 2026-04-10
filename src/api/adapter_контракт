@@ -1,5 +1,5 @@
 {
-  "agent_id": "requester",
+  "agent_id": "adapter",
   "status": "string", //ready or extra_question
   "payload": {
     "display_text": "string",  // Текст для пользователя если нужен доп вопрос
