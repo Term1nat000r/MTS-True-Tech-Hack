@@ -1,23 +1,30 @@
 # Заглушки агентов
+
 from agents.base import AgentInput, AgentOutput, BaseAgent
 
 # Заглушка агента-генератора
 class GeneratorAgent(BaseAgent):
-    def run(self, input: AgentInput) -> AgentOutput:
+    async def run(self, input: AgentInput) -> AgentOutput:
         return AgentOutput(
             result=f"[ЗАГЛУШКА] Здесь будет сгенерированный агентом код"
         )
 
 # Заглушка агента-валидатора кода
-class ValidationAgent(BaseAgent):
-    def run(self, input: AgentInput) -> AgentOutput:
+class ValidatorAgent(BaseAgent):
+    async def run(self, input: AgentInput) -> AgentOutput:
         return AgentOutput(
             result=f"[ЗАГЛУШКА] Здесь будет результат от агента-валидатора"
         )
 
 # Заглушка агента-обработчика промптов
-class ProcessAgent(BaseAgent):
-    def run(self, input: AgentInput) -> AgentOutput:
+class ProcessorAgent(BaseAgent):
+    async def run(self, input: AgentInput) -> AgentOutput:
         return AgentOutput(
             result=f"[ЗАГЛУШКА] Здесь будет результат от агента-обработчика"
+        )
+
+class Orchestrator(BaseAgent):
+    async def run(self, input: AgentInput) -> AgentOutput:
+        return AgentOutput(
+            result=f"[ЗАГЛУШКА] Здесь будет результат работы оркестратора"
         )
