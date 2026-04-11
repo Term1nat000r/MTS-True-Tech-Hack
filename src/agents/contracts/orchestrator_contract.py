@@ -10,11 +10,16 @@ class Header(BaseModel):
     timestamp: int
     status: str
 
+class History(BaseModel):
+    role: str
+    content: str
+
 class Payload(BaseModel):
     content: str
     language: str = "lua"
     explanation: str
     clarification_message: str
+    history: List[History] = []
 
 class Usage(BaseModel):
     total_tokens: int

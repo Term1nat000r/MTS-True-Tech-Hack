@@ -1,4 +1,5 @@
 # Контракт вывода от агента-уточнителя
+from typing import List
 
 from pydantic import BaseModel
 
@@ -12,9 +13,14 @@ class Settings(BaseModel):
     mode: str = "code_generation"
     stream: bool = False
 
+class History(BaseModel):
+    role: str
+    content: str
+
 class Payload(BaseModel):
     raw_prompt: str
     settings: Settings
+    history: List[History] = []
 
 class Metadata(BaseModel):
     timestamp: int
