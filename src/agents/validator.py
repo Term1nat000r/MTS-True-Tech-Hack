@@ -4,13 +4,12 @@ import tempfile
 import os
 import re
 import time
-import uuid
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from openai import OpenAI
 
 # ==========================================
-# 1. КОНТРАКТЫ ДАННЫХ ДЛЯ ВНУТРЕННЕЙ ЛОГИКИ
+# 1. КОНТРАКТЫ ДАННЫХ
 # ==========================================
 class Task(BaseModel):
     original_prompt: str
@@ -27,9 +26,21 @@ class CodeResult(BaseModel):
 # ==========================================
 
 class CriticAgent:
-    def __init__(self, client: OpenAI, model_name: str = "qwen2.5:7b"):
+    def __init__(self, client: OpenAI):
         self.client = client
-        self.model_name = model_name
+        
+        # Считываем системный промпт из файла validator.txt
+        # Путь строится относительно расположения этого файла
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        prompt_path = os.path.join(current_dir, "prompts", "validator.txt")
+        
+        try:
+            with open(prompt_path, "r", encoding="utf-8") as f:
+                self.system_prompt = f.read().strip()
+        except FileNotFoundError:
+            # Резервный промпт на случай, если файл не найден
+            self.system_prompt = "Ты Senior Lua Validator. Проверяй код и возвращай JSON."
+            print(f"ВНИМАНИЕ: Файл {prompt_path} не найден! Использован резервный промпт.")
 
     def _run_syntax_check(self, code: str) -> Optional[str]:
         """Статическая проверка через luac -p"""
@@ -45,11 +56,10 @@ class CriticAgent:
             if os.path.exists(temp_path):
                 os.remove(temp_path)
 
-    def validate(self, task: Task, code_result: CodeResult) -> dict:
-        """Основной метод, возвращающий результат по контракту"""
+    def validate(self, task: Task, code_result: CodeResult, model_name: str = "qwen2.5:7b") -> dict:
         start_time = time.time()
         
-        # Инициализация структуры ответа (Контракт)
+        # Инициализация контракта
         contract = {
             "header": {
                 "source_agent": "validator",
@@ -63,17 +73,14 @@ class CriticAgent:
                 "recommendation": "retry"
             },
             "metadata": {
-                "model": self.model_name,
-                "usage": {
-                    "total_tokens": 0,
-                    "duration_ms": 0
-                }
+                "model": model_name,
+                "usage": {"total_tokens": 0, "duration_ms": 0}
             },
             "error": None
         }
 
         try:
-            # --- ШАГ 1: Синтаксический анализ ---
+            # 1. Синтаксический анализ (Fast Fail)
             syntax_error = self._run_syntax_check(code_result.code)
             if syntax_error:
                 contract["payload"]["issues"].append(f"Syntax error: {syntax_error}")
@@ -81,40 +88,35 @@ class CriticAgent:
                 contract["metadata"]["usage"]["duration_ms"] = int((time.time() - start_time) * 1000)
                 return contract
 
-            # --- ШАГ 2: Семантический анализ через LLM ---
-            system_prompt = (
-                "Ты Senior Lua Validator. Проверь код на логику и соответствие ТЗ.\n"
-                "Отвечай ТОЛЬКО в формате JSON: {\"is_valid\": bool, \"issues\": [], \"recommendation\": \"retry\"|\"pass\"|\"abort\"}"
-            )
-            user_prompt = f"ТЗ: {task.original_prompt}\nКод:\n{code_result.code}"
+            # 2. Семантический анализ через LLM
+            user_prompt = f"ТЗ пользователя:\n{task.original_prompt}\n\nСгенерированный код:\n{code_result.code}"
 
             response = self.client.chat.completions.create(
-                model=self.model_name,
+                model=model_name,
                 messages=[
-                    {"role": "system", "content": system_prompt},
+                    {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
                 response_format={"type": "json_object"},
                 temperature=0.1
             )
 
-            # Парсинг ответа модели
-            llm_res = json.loads(response.choices[0].message.content)
+            # Парсинг ответа
+            llm_data = json.loads(response.choices[0].message.content)
             
-            # Обновление контракта данными из LLM
-            contract["payload"]["is_valid"] = llm_res.get("is_valid", False)
-            contract["payload"]["issues"] = llm_res.get("issues", [])
-            contract["payload"]["recommendation"] = llm_res.get("recommendation", "retry")
+            contract["payload"]["is_valid"] = llm_data.get("is_valid", False)
+            contract["payload"]["issues"] = llm_data.get("issues", [])
+            contract["payload"]["recommendation"] = llm_data.get("recommendation", "retry")
             
-            # Сбор метрик
-            contract["metadata"]["usage"]["total_tokens"] = getattr(response.usage, 'total_tokens', 0)
-            
-            # Детект зацикливания (если итераций слишком много)
+            # Собираем метрики
+            if hasattr(response, 'usage') and response.usage:
+                contract["metadata"]["usage"]["total_tokens"] = response.usage.total_tokens
+
+            # Детект зацикливания
             if task.iteration >= 3 and not contract["payload"]["is_valid"]:
                 contract["payload"]["recommendation"] = "abort"
-                contract["payload"]["issues"].append("Max iterations reached. Agent is stuck.")
+                contract["payload"]["issues"].append("Превышено макс. число итераций исправления.")
 
-            # Если всё ок
             if contract["payload"]["is_valid"]:
                 contract["payload"]["recommendation"] = "pass"
 
@@ -125,3 +127,14 @@ class CriticAgent:
 
         contract["metadata"]["usage"]["duration_ms"] = int((time.time() - start_time) * 1000)
         return contract
+
+# Блок для локального тестирования
+if __name__ == "__main__":
+    test_client = OpenAI(base_url="http://localhost:11434/v1", api_key="local-hackathon-key")
+    validator = CriticAgent(client=test_client)
+    
+    t = Task(original_prompt="Напиши функцию суммы", request_id="12345")
+    c = CodeResult(code="function sum(a,b) return a+b end", iteration=1)
+    
+    res = validator.validate(t, c)
+    print(json.dumps(res, indent=2, ensure_ascii=False))
