@@ -1,6 +1,8 @@
 import json
 import time
+import os
 from openai import OpenAI
+from knowledge import get_generator_system_prompt # Импортируем нашу базу знаний
 
 class LocalQwenGenerator:
     def __init__(self, base_url: str = "http://localhost:11434/v1"):
@@ -10,21 +12,13 @@ class LocalQwenGenerator:
             timeout=120.0
         )
         
-        self.system_prompt = """
-        Ты — AI-генератор кода. Твоя задача — написать рабочий код на основе ТЗ и кратко объяснить его работу.
-        Возвращай СТРОГИЙ JSON. Никаких рассуждений вне JSON.
-        
-        СТРУКТУРА:
-        {
-            "status": "success" | "error" | "clarification",
-            "content": "Сгенерированный код",
-            "explanation": "Краткое объяснение, что делает этот код",
-            "language": "lua"
-        }
-        
-        Если ТЗ невозможно выполнить, верни status = "error" и напиши причину в explanation, а content оставь пустым.
-        В content должен быть ТОЛЬКО код.
-        """
+        # 1. Читаем базовый промпт из файла
+        prompt_path = os.path.join(os.path.dirname(__file__), "prompts", "generator.txt")
+        with open(prompt_path, "r", encoding="utf-8") as f:
+            base_prompt = f.read().strip()
+            
+        # 2. Обогащаем промпт правилами платформы и примерами
+        self.system_prompt = get_generator_system_prompt(base_prompt)
 
     def generate(self, refined_prompt: str, request_id: str, model_name: str = "qwen2.5:7b") -> dict:
         start_time = time.time()
