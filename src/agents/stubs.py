@@ -1,30 +1,27 @@
 # Заглушки агентов
 
-from agents.base import AgentInput, AgentOutput, BaseAgent
+from agents.contracts.base import BaseAgent, StubAgentOutput, StubAgentInput
+# from agents.contracts.generator_contract import GeneratorOutput
+# from agents.contracts.validator_contract import ValidatorOutput
+# from agents.contracts.adapter_contract import AdapterOutput
 
 # Заглушка агента-генератора
 class GeneratorAgent(BaseAgent):
-    async def run(self, input: AgentInput) -> AgentOutput:
-        return AgentOutput(
-            result=f"[ЗАГЛУШКА] Здесь будет сгенерированный агентом код"
+    async def run(self, inp: StubAgentInput) -> StubAgentOutput:
+        return StubAgentOutput(
+            result=f"[ЗАГЛУШКА] Здесь будет результат агента-генератора"
         )
 
 # Заглушка агента-валидатора кода
 class ValidatorAgent(BaseAgent):
-    async def run(self, input: AgentInput) -> AgentOutput:
-        return AgentOutput(
-            result=f"[ЗАГЛУШКА] Здесь будет результат от агента-валидатора"
+    async def run(self, inp: StubAgentInput) -> StubAgentOutput:
+        return StubAgentOutput(
+            result=f"[ЗАГЛУШКА] Здесь будет результат агента-валидатора"
         )
 
 # Заглушка агента-обработчика промптов
-class ProcessorAgent(BaseAgent):
-    async def run(self, input: AgentInput) -> AgentOutput:
-        return AgentOutput(
-            result=f"[ЗАГЛУШКА] Здесь будет результат от агента-обработчика"
-        )
-
-class Orchestrator(BaseAgent):
-    async def run(self, input: AgentInput) -> AgentOutput:
-        return AgentOutput(
-            result=f"[ЗАГЛУШКА] Здесь будет результат работы оркестратора"
+class AdapterAgent(BaseAgent):
+    async def run(self, inp: StubAgentInput) -> StubAgentOutput:
+        return StubAgentOutput(
+            result=f"[ЗАГЛУШКА] Здесь будет результат агента-адаптера"
         )
