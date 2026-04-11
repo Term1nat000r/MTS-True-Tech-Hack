@@ -6,12 +6,9 @@ from openai import OpenAI
 from api.config import Config
 
 class LocalQwenAdapter:
-    # ПРАВКА: Принимаем готовый клиент извне
     def __init__(self, client: OpenAI):
         self.client = client
-        
-        # Читаем промпт напрямую из файла
-        prompt_path = os.path.join(os.path.dirname(__file__), "prompts", "clarifier.txt")
+        prompt_path = Config.PROMPTS_DIR / "clarifier.txt"
         with open(prompt_path, "r", encoding="utf-8") as f:
             self.system_prompt = f.read().strip()
 
@@ -44,14 +41,13 @@ class LocalQwenAdapter:
         raw_result = ""
         
         try:
-            # Получаем все настройки разом из конфига
             llm_params = Config.get_llm_params()
             response = self.client.chat.completions.create(
                 messages=[
                     {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": raw_input}
                 ],
-                **llm_params # Магия Питона: распаковываем параметры (model, temperature, max_tokens и т.д.)
+                **llm_params
             )
             
             duration_ms = int((time.time() - start_time) * 1000)
@@ -87,9 +83,7 @@ class LocalQwenAdapter:
             contract["error"] = {"message": str(e)}
             return contract
 
-# ПРАВКА: Блок для локального тестирования файла
 if __name__ == "__main__":
-    # Создаем тестового клиента только для отладки этого файла
     test_client = OpenAI(base_url="http://localhost:11434/v1", api_key="local-hackathon-key")
     adapter = LocalQwenAdapter(client=test_client)
     
