@@ -1,0 +1,167 @@
+<svg width="100%" viewBox="0 0 720 1320" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
+  <defs>
+    <marker id="arrow2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <!-- DARK BG -->
+  <rect x="0" y="0" width="720" height="1320" fill="rgb(20, 22, 28)"/>
+
+  <!-- TITLE -->
+  <text x="360" y="32" text-anchor="middle" font-size="16" font-weight="600" fill="rgb(237, 237, 235)">Агент 2 — Критик + Валидатор (v2)</text>
+  <text x="360" y="52" text-anchor="middle" font-size="11" fill="rgb(140, 145, 155)">с песочницей, функциональными тестами и дедупликацией замечаний</text>
+
+  <!-- INPUT -->
+  <g>
+    <rect x="130" y="72" width="460" height="60" rx="8" fill="rgb(38, 40, 46)" stroke="rgb(90, 95, 105)" stroke-width="0.5"/>
+    <text x="360" y="94" text-anchor="middle" font-size="14" font-weight="500" fill="rgb(230, 230, 225)">Вход: CodeResult от Агента 1</text>
+    <text x="360" y="112" text-anchor="middle" font-size="11" fill="rgb(160, 165, 175)">{ code, task, iteration, history замечаний }</text>
+  </g>
+  <line x1="360" y1="132" x2="360" y2="156" stroke="rgb(140, 145, 155)" stroke-width="1.5" marker-end="url(#arrow2)"/>
+
+  <!-- NEW: Mode detector -->
+  <g>
+    <rect x="130" y="156" width="460" height="72" rx="8" fill="rgb(60, 70, 90)" stroke="rgb(140, 170, 210)" stroke-width="0.5" stroke-dasharray="4 2"/>
+    <text x="360" y="178" text-anchor="middle" font-size="14" font-weight="500" fill="rgb(200, 220, 245)">★ Определение режима проверки</text>
+    <text x="360" y="197" text-anchor="middle" font-size="11" fill="rgb(170, 195, 225)">библиотечный код (только функции) vs исполняемый скрипт</text>
+    <text x="360" y="213" text-anchor="middle" font-size="11" fill="rgb(170, 195, 225)">эвристика: есть ли top-level вызовы / подсказки из задачи</text>
+  </g>
+  <line x1="360" y1="228" x2="360" y2="252" stroke="rgb(140, 145, 155)" stroke-width="1.5" marker-end="url(#arrow2)"/>
+
+  <!-- =============== PHASE 1: STATIC =============== -->
+  <rect x="40" y="244" width="640" height="8" rx="4" fill="rgb(35, 38, 46)"/>
+  <text x="50" y="264" font-size="12" fill="rgb(140, 145, 155)">Фаза 1 — статическая проверка (без LLM, без запуска кода)</text>
+
+  <g>
+    <rect x="40" y="272" width="220" height="96" rx="8" fill="rgb(25, 70, 52)" stroke="rgb(120, 220, 180)" stroke-width="0.5"/>
+    <text x="150" y="294" text-anchor="middle" font-size="13" font-weight="500" fill="rgb(180, 235, 210)">luac -p</text>
+    <text x="150" y="311" text-anchor="middle" font-size="10" fill="rgb(120, 220, 180)">синтаксис, без выполнения</text>
+    <text x="150" y="326" text-anchor="middle" font-size="10" fill="rgb(120, 220, 180)">stderr → готовый фидбек</text>
+    <text x="150" y="346" text-anchor="middle" font-size="10" fill="rgb(120, 220, 180)">"ошибка в строке N: ..."</text>
+  </g>
+
+  <g>
+    <rect x="270" y="272" width="180" height="96" rx="8" fill="rgb(25, 70, 52)" stroke="rgb(120, 220, 180)" stroke-width="0.5"/>
+    <text x="360" y="294" text-anchor="middle" font-size="13" font-weight="500" fill="rgb(180, 235, 210)">luacheck</text>
+    <text x="360" y="311" text-anchor="middle" font-size="10" fill="rgb(120, 220, 180)">линт: глобалы,</text>
+    <text x="360" y="326" text-anchor="middle" font-size="10" fill="rgb(120, 220, 180)">неиспользуемые var,</text>
+    <text x="360" y="341" text-anchor="middle" font-size="10" fill="rgb(120, 220, 180)">shadowing</text>
+  </g>
+
+  <!-- NEW: heuristics -->
+  <g>
+    <rect x="460" y="272" width="220" height="96" rx="8" fill="rgb(60, 70, 90)" stroke="rgb(140, 170, 210)" stroke-width="0.5" stroke-dasharray="4 2"/>
+    <text x="570" y="294" text-anchor="middle" font-size="13" font-weight="500" fill="rgb(200, 220, 245)">★ Эвристики</text>
+    <text x="570" y="311" text-anchor="middle" font-size="10" fill="rgb(170, 195, 225)">TODO/FIXME в коде</text>
+    <text x="570" y="326" text-anchor="middle" font-size="10" fill="rgb(170, 195, 225)">while true без break</text>
+    <text x="570" y="341" text-anchor="middle" font-size="10" fill="rgb(170, 195, 225)">пустые функции, заглушки</text>
+    <text x="570" y="356" text-anchor="middle" font-size="10" fill="rgb(170, 195, 225)">подозрительные вызовы ОС</text>
+  </g>
+
+  <line x1="360" y1="368" x2="360" y2="392" stroke="rgb(140, 145, 155)" stroke-width="1.5" marker-end="url(#arrow2)"/>
+
+  <!-- Gate 1 -->
+  <g>
+    <rect x="210" y="392" width="300" height="48" rx="8" fill="rgb(38, 40, 46)" stroke="rgb(90, 95, 105)" stroke-width="0.5"/>
+    <text x="360" y="414" text-anchor="middle" font-size="13" font-weight="500" fill="rgb(230, 230, 225)">Статика пройдена?</text>
+    <text x="360" y="430" text-anchor="middle" font-size="10" fill="rgb(160, 165, 175)">нет ошибок синтаксиса и критичных лингов</text>
+  </g>
+
+  <!-- NO: early exit to feedback -->
+  <line x1="210" y1="416" x2="80" y2="416" stroke="rgb(240, 153, 123)" stroke-width="1.5" marker-end="url(#arrow2)"/>
+  <text x="90" y="410" font-size="11" fill="rgb(240, 153, 123)">нет → early exit</text>
+
+  <!-- YES down -->
+  <line x1="360" y1="440" x2="360" y2="472" stroke="rgb(140, 145, 155)" stroke-width="1.5" marker-end="url(#arrow2)"/>
+  <text x="368" y="460" font-size="11" fill="rgb(160, 165, 175)">да</text>
+
+  <!-- =============== PHASE 2: SANDBOX EXEC =============== -->
+  <rect x="40" y="464" width="640" height="8" rx="4" fill="rgb(35, 38, 46)"/>
+  <text x="50" y="484" font-size="12" fill="rgb(140, 145, 155)">Фаза 2 — исполнение кода в песочнице + функциональные тесты</text>
+
+  <!-- NEW: sandbox block (big, highlighted) -->
+  <g>
+    <rect x="40" y="492" width="640" height="160" rx="10" fill="rgb(60, 70, 90)" stroke="rgb(140, 170, 210)" stroke-width="1" stroke-dasharray="6 3"/>
+    <text x="360" y="516" text-anchor="middle" font-size="15" font-weight="600" fill="rgb(200, 220, 245)">★ Песочница для запуска Lua-кода</text>
+    <text x="360" y="534" text-anchor="middle" font-size="11" fill="rgb(170, 195, 225)">почему критично: весь смысл задачи — безопасность и приватность</text>
+
+    <!-- Two-layer sandbox -->
+    <rect x="60" y="548" width="290" height="90" rx="6" fill="rgb(45, 55, 75)" stroke="rgb(120, 150, 190)" stroke-width="0.5"/>
+    <text x="205" y="568" text-anchor="middle" font-size="12" font-weight="500" fill="rgb(200, 220, 245)">Слой 1: lua-sandbox.lua</text>
+    <text x="205" y="585" text-anchor="middle" font-size="10" fill="rgb(170, 195, 225)">подмена io, os.execute, require</text>
+    <text x="205" y="600" text-anchor="middle" font-size="10" fill="rgb(170, 195, 225)">отключение сети, файловых операций</text>
+    <text x="205" y="615" text-anchor="middle" font-size="10" fill="rgb(170, 195, 225)">setfenv с белым списком функций</text>
+    <text x="205" y="630" text-anchor="middle" font-size="10" fill="rgb(170, 195, 225)">timeout 5s (ловит бесконечные циклы)</text>
+
+    <rect x="370" y="548" width="290" height="90" rx="6" fill="rgb(45, 55, 75)" stroke="rgb(120, 150, 190)" stroke-width="0.5"/>
+    <text x="515" y="568" text-anchor="middle" font-size="12" font-weight="500" fill="rgb(200, 220, 245)">Слой 2: Docker-контейнер</text>
+    <text x="515" y="585" text-anchor="middle" font-size="10" fill="rgb(170, 195, 225)">--network=none, read-only FS</text>
+    <text x="515" y="600" text-anchor="middle" font-size="10" fill="rgb(170, 195, 225)">--memory=256m --cpus=1</text>
+    <text x="515" y="615" text-anchor="middle" font-size="10" fill="rgb(170, 195, 225)">non-root user, drop capabilities</text>
+    <text x="515" y="630" text-anchor="middle" font-size="10" fill="rgb(170, 195, 225)">захват stdout/stderr + exit code</text>
+  </g>
+
+  <line x1="360" y1="652" x2="360" y2="680" stroke="rgb(140, 145, 155)" stroke-width="1.5" marker-end="url(#arrow2)"/>
+
+  <!-- NEW: Test generator -->
+  <g>
+    <rect x="130" y="680" width="460" height="88" rx="8" fill="rgb(60, 70, 90)" stroke="rgb(140, 170, 210)" stroke-width="0.5" stroke-dasharray="4 2"/>
+    <text x="360" y="702" text-anchor="middle" font-size="14" font-weight="500" fill="rgb(200, 220, 245)">★ Генерация и прогон функциональных тестов</text>
+    <text x="360" y="721" text-anchor="middle" font-size="11" fill="rgb(170, 195, 225)">(прямая рекомендация жюри из Q&amp;A)</text>
+    <text x="360" y="738" text-anchor="middle" font-size="11" fill="rgb(170, 195, 225)">LLM-вызов: "по задаче напиши 2-3 test-case: вход → ожид. выход"</text>
+    <text x="360" y="754" text-anchor="middle" font-size="11" fill="rgb(170, 195, 225)">прогон тестов в песочнице; сколько прошло из N → в фидбек</text>
+  </g>
+  <line x1="360" y1="768" x2="360" y2="792" stroke="rgb(140, 145, 155)" stroke-width="1.5" marker-end="url(#arrow2)"/>
+
+  <!-- =============== PHASE 3: LLM CRITIC =============== -->
+  <rect x="40" y="784" width="640" height="8" rx="4" fill="rgb(35, 38, 46)"/>
+  <text x="50" y="804" font-size="12" fill="rgb(140, 145, 155)">Фаза 3 — семантическая критика (LLM)</text>
+
+  <g>
+    <rect x="130" y="812" width="460" height="88" rx="8" fill="rgb(115, 55, 25)" stroke="rgb(240, 153, 123)" stroke-width="0.5"/>
+    <text x="360" y="834" text-anchor="middle" font-size="14" font-weight="500" fill="rgb(250, 199, 117)">Вызов qwen2.5-coder:7b (роль критика)</text>
+    <text x="360" y="853" text-anchor="middle" font-size="11" fill="rgb(239, 159, 39)">system: "проверь соответствие задаче, edge cases, читаемость"</text>
+    <text x="360" y="869" text-anchor="middle" font-size="11" fill="rgb(239, 159, 39)">формат ответа: JSON { lgtm: bool, comments: [max 3] }</text>
+    <text x="360" y="885" text-anchor="middle" font-size="11" fill="rgb(239, 159, 39)">temperature=0.1 для детерминированности вердикта</text>
+  </g>
+  <line x1="360" y1="900" x2="360" y2="924" stroke="rgb(140, 145, 155)" stroke-width="1.5" marker-end="url(#arrow2)"/>
+
+  <!-- Parse + NEW conservative fallback -->
+  <g>
+    <rect x="130" y="924" width="460" height="72" rx="8" fill="rgb(60, 70, 90)" stroke="rgb(140, 170, 210)" stroke-width="0.5" stroke-dasharray="4 2"/>
+    <text x="360" y="946" text-anchor="middle" font-size="14" font-weight="500" fill="rgb(200, 220, 245)">★ Парсинг вердикта критика</text>
+    <text x="360" y="965" text-anchor="middle" font-size="11" fill="rgb(170, 195, 225)">JSON невалиден / ответ размыт ("вроде ок, но...") →</text>
+    <text x="360" y="981" text-anchor="middle" font-size="11" fill="rgb(170, 195, 225)">консервативно считаем lgtm=false (лучше лишний retry)</text>
+  </g>
+  <line x1="360" y1="996" x2="360" y2="1020" stroke="rgb(140, 145, 155)" stroke-width="1.5" marker-end="url(#arrow2)"/>
+
+  <!-- NEW: Dedup + loop break detection -->
+  <g>
+    <rect x="130" y="1020" width="460" height="88" rx="8" fill="rgb(60, 70, 90)" stroke="rgb(140, 170, 210)" stroke-width="0.5" stroke-dasharray="4 2"/>
+    <text x="360" y="1042" text-anchor="middle" font-size="14" font-weight="500" fill="rgb(200, 220, 245)">★ Дедупликация замечаний и детект тупика</text>
+    <text x="360" y="1061" text-anchor="middle" font-size="11" fill="rgb(170, 195, 225)">сравнить новые замечания с history предыдущих итераций</text>
+    <text x="360" y="1077" text-anchor="middle" font-size="11" fill="rgb(170, 195, 225)">если фидбек повторился 2 раза → Генератор не справляется</text>
+    <text x="360" y="1093" text-anchor="middle" font-size="11" fill="rgb(170, 195, 225)">→ насильно завершить с лучшим результатом из истории</text>
+  </g>
+  <line x1="360" y1="1108" x2="360" y2="1132" stroke="rgb(140, 145, 155)" stroke-width="1.5" marker-end="url(#arrow2)"/>
+
+  <!-- Final feedback -->
+  <g>
+    <rect x="130" y="1132" width="460" height="88" rx="8" fill="rgb(15, 75, 60)" stroke="rgb(120, 220, 180)" stroke-width="0.5"/>
+    <text x="360" y="1154" text-anchor="middle" font-size="14" font-weight="500" fill="rgb(180, 235, 210)">Формирование Feedback</text>
+    <text x="360" y="1173" text-anchor="middle" font-size="11" fill="rgb(120, 220, 180)">{ lgtm, comments ≤ 3, static_errors, tests_passed, loop_detected }</text>
+    <text x="360" y="1189" text-anchor="middle" font-size="11" fill="rgb(120, 220, 180)">всё должно уложиться в num_predict=256 токенов для next iter</text>
+    <text x="360" y="1205" text-anchor="middle" font-size="11" fill="rgb(120, 220, 180)">→ возврат в оркестратор (LGTM=финал / иначе → retry Агента 1)</text>
+  </g>
+
+  <!-- LEGEND -->
+  <g>
+    <rect x="40" y="1234" width="640" height="76" rx="8" fill="rgb(30, 33, 40)" stroke="rgb(70, 75, 85)" stroke-width="0.5"/>
+    <text x="54" y="1254" font-size="12" font-weight="600" fill="rgb(230, 230, 225)">Что нового в v2 (★ блоки):</text>
+
+    <text x="54" y="1272" font-size="10" fill="rgb(200, 220, 245)">• Определение режима: библиотека vs скрипт (не запускаем то, у чего нет точки входа)</text>
+    <text x="54" y="1286" font-size="10" fill="rgb(200, 220, 245)">• Двухслойная песочница: lua-sandbox.lua + Docker контейнер без сети и ФС → закрывает риск безопасности</text>
+    <text x="54" y="1300" font-size="10" fill="rgb(200, 220, 245)">• Функциональные тесты (по рекомендации жюри) + консервативный fallback критика + детект тупика итераций</text>
+  </g>
+</svg>
