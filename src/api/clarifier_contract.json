@@ -2,13 +2,13 @@
   "header": {
     "source_agent": "string",     
     "request_id": "uuid",         
-    "timestamp": 1712850000,     
+    "timestamp": 1712850000,      
     "status": "string"            
   },
   "payload": { 
-      "display_text": "string", 
+      "display_text": "string",  
       "refined_prompt": "string", 
-      "is_ready": "boolean"      
+      "is_ready": "boolean"     
   },
   "metadata": {
     "model": "qwen2.5:7b",     

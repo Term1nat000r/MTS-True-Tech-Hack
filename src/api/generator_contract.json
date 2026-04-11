@@ -1,14 +1,14 @@
 {
   "header": {
     "source_agent": "string",     
-    "request_id": "uuid",         
+    "request_id": "uuid",       
     "timestamp": 1712850000,
-    "status": "string"            
+    "status": "string"           
   },
   "payload": { 
-      "content": "string",       
-      "explanation": "string",   
-      "language": "lua"          
+      "content": "string",      
+      "explanation": "string",  
+      "language": "lua"       
   },
   "metadata": {
     "model": "qwen2.5:7b",
