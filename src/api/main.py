@@ -2,7 +2,8 @@
 
 from fastapi import FastAPI
 
-from src.agents.stubs import GeneratorAgent, ValidatorAgent, AdapterAgent
+from src.agents.orchestrator import Orchestrator
+from src.agents.stubs import GeneratorAgent, ValidatorAgent, ClarifierAgent
 from src.agents.contracts.base import StubAgentInput
 
 app = FastAPI()
@@ -21,7 +22,12 @@ async def test_agent_validator():
     result = await ValidatorAgent().run(StubAgentInput(data="Hello World"))
     return result
 
-@app.get("/test_ad")
-async def test_agent_adapter():
-    result = await AdapterAgent().run(StubAgentInput(data="Hello World"))
+@app.get("/test_cl")
+async def test_agent_clarifier():
+    result = await ClarifierAgent().run(StubAgentInput(data="Hello World"))
+    return result
+
+@app.get("/test_orc")
+async def test_orchestrator():
+    result = await Orchestrator().run(StubAgentInput(data="Hello World"))
     return result
