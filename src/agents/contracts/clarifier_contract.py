@@ -1,4 +1,4 @@
-# Контракт вывода от агента-адаптера
+# Контракт вывода от агента-уточнителя
 
 from pydantic import BaseModel
 
@@ -21,7 +21,7 @@ class Metadata:
     model: str
     usage: Usage
 
-class AdapterOutput(BaseModel):
+class ClarifierOutput(BaseModel):
     header: Header
     payload: Payload
     metadata: Metadata
