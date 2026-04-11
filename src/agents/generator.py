@@ -2,20 +2,17 @@ import json
 import time
 import os
 from openai import OpenAI
-from knowledge import get_generator_system_prompt # Импортируем нашу базу знаний
-from core.config import Config
+from api.knowledge import get_generator_system_prompt
+from api.config import Config
+
 
 class LocalQwenGenerator:
-    # ПРАВКА: Принимаем готовый клиент извне
     def __init__(self, client: OpenAI):
         self.client = client
-        
-        # Читаем базовый промпт из файла
-        prompt_path = os.path.join(os.path.dirname(__file__), "prompts", "generator.txt")
+        prompt_path = Config.PROMPTS_DIR / "generator.txt"
         with open(prompt_path, "r", encoding="utf-8") as f:
             base_prompt = f.read().strip()
-            
-        # Обогащаем промпт правилами платформы и примерами
+        self.system_prompt = get_generator_system_prompt(base_prompt)
         self.system_prompt = get_generator_system_prompt(base_prompt)
 
     def generate(self, refined_prompt: str, request_id: str) -> dict:
@@ -88,10 +85,8 @@ class LocalQwenGenerator:
         except Exception as e:
             contract["error"] = {"message": str(e)}
             return contract
-
-# ПРАВКА: Блок для локального тестирования файла
+            
 if __name__ == "__main__":
-    # Создаем тестового клиента
     test_client = OpenAI(base_url="http://localhost:11434/v1", api_key="local-hackathon-key")
     generator = LocalQwenGenerator(client=test_client)
     
