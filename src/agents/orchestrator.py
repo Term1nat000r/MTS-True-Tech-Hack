@@ -1,6 +1,6 @@
-from agents.contracts.base import StubAgentInput, StubAgentOutput
-from agents.contracts.base import BaseAgent
-from agents.stubs import GeneratorAgent, ValidatorAgent, ClarifierAgent
+from src.agents.contracts.base import StubAgentInput, StubAgentOutput
+from src.agents.contracts.base import BaseAgent
+from src.agents.stubs import GeneratorAgent, ValidatorAgent, ClarifierAgent
 
 class Orchestrator(BaseAgent):
     async def run(self, inp: StubAgentInput) -> StubAgentOutput:
