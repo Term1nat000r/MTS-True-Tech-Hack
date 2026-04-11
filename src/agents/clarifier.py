@@ -3,7 +3,7 @@ import time
 import uuid
 import os
 from openai import OpenAI
-from core.config import Config
+from api.config import Config
 
 class LocalQwenAdapter:
     # ПРАВКА: Принимаем готовый клиент извне
