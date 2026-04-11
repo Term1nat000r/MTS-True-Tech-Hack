@@ -41,6 +41,7 @@ class LocalQwenAdapter:
         raw_result = ""
         
         try:
+            # Получаем все настройки разом из конфига
             llm_params = Config.get_llm_params()
             response = self.client.chat.completions.create(
                 messages=[
