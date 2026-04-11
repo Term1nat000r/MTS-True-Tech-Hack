@@ -3,6 +3,7 @@ import time
 import os
 from openai import OpenAI
 from knowledge import get_generator_system_prompt # Импортируем нашу базу знаний
+from core.config import Config
 
 class LocalQwenGenerator:
     # ПРАВКА: Принимаем готовый клиент извне
@@ -17,7 +18,7 @@ class LocalQwenGenerator:
         # Обогащаем промпт правилами платформы и примерами
         self.system_prompt = get_generator_system_prompt(base_prompt)
 
-    def generate(self, refined_prompt: str, request_id: str, model_name: str = "qwen2.5:7b") -> dict:
+    def generate(self, refined_prompt: str, request_id: str) -> dict:
         start_time = time.time()
         
         contract = {
@@ -33,7 +34,7 @@ class LocalQwenGenerator:
                 "language": "lua"
             },
             "metadata": {
-                "model": model_name,
+                "model": Config.MODEL_NAME,
                 "usage": {
                     "total_tokens": 0,
                     "duration_ms": 0
@@ -45,14 +46,14 @@ class LocalQwenGenerator:
         raw_result = ""
         
         try:
+            llm_params = Config.get_llm_params()
+    
             response = self.client.chat.completions.create(
-                model=model_name,
                 messages=[
                     {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": refined_prompt}
                 ],
-                response_format={"type": "json_object"},
-                temperature=0.3,
+                **llm_params
             )
             
             duration_ms = int((time.time() - start_time) * 1000)
