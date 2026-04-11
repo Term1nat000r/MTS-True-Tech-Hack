@@ -4,12 +4,17 @@ import tempfile
 import os
 import re
 import time
+import uuid
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from openai import OpenAI
 
+# ИМПОРТЫ
+from core.config import Config
+from knowledge import get_validator_system_prompt # Предполагаем, что такая функция есть для валидатора
+
 # ==========================================
-# 1. КОНТРАКТЫ ДАННЫХ
+# 1. КОНТРАКТЫ ДАННЫХ ДЛЯ ВНУТРЕННЕЙ ЛОГИКИ
 # ==========================================
 class Task(BaseModel):
     original_prompt: str
@@ -26,21 +31,22 @@ class CodeResult(BaseModel):
 # ==========================================
 
 class CriticAgent:
-    def __init__(self, client: OpenAI):
+    # ПРАВКА: Инициализация по примеру
+    def __init__(self, client: OpenAI, model_name: str = Config.MODEL_NAME):
         self.client = client
-        
-        # Считываем системный промпт из файла validator.txt
-        # Путь строится относительно расположения этого файла
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        prompt_path = os.path.join(current_dir, "prompts", "validator.txt")
-        
+        self.model_name = model_name
+
+        # Читаем базовый промпт из файла по примеру
+        prompt_path = os.path.join(os.path.dirname(__file__), "prompts", "validator.txt")
         try:
             with open(prompt_path, "r", encoding="utf-8") as f:
-                self.system_prompt = f.read().strip()
+                base_prompt = f.read().strip()
         except FileNotFoundError:
-            # Резервный промпт на случай, если файл не найден
-            self.system_prompt = "Ты Senior Lua Validator. Проверяй код и возвращай JSON."
-            print(f"ВНИМАНИЕ: Файл {prompt_path} не найден! Использован резервный промпт.")
+            # Фолбэк, если файл не найден
+            base_prompt = "Ты Senior Lua Validator. Проверь код на логику и соответствие ТЗ."
+            
+        # Обогащаем промпт через базу знаний (как в примере)
+        self.system_prompt = get_validator_system_prompt(base_prompt)
 
     def _run_syntax_check(self, code: str) -> Optional[str]:
         """Статическая проверка через luac -p"""
@@ -56,10 +62,11 @@ class CriticAgent:
             if os.path.exists(temp_path):
                 os.remove(temp_path)
 
-    def validate(self, task: Task, code_result: CodeResult, model_name: str = "qwen2.5:7b") -> dict:
+    def validate(self, task: Task, code_result: CodeResult) -> dict:
+        """Основной метод, возвращающий результат по контракту"""
         start_time = time.time()
         
-        # Инициализация контракта
+        # Инициализация структуры ответа
         contract = {
             "header": {
                 "source_agent": "validator",
@@ -73,14 +80,17 @@ class CriticAgent:
                 "recommendation": "retry"
             },
             "metadata": {
-                "model": model_name,
-                "usage": {"total_tokens": 0, "duration_ms": 0}
+                "model": self.model_name,
+                "usage": {
+                    "total_tokens": 0,
+                    "duration_ms": 0
+                }
             },
             "error": None
         }
 
         try:
-            # 1. Синтаксический анализ (Fast Fail)
+            # --- ШАГ 1: Синтаксический анализ ---
             syntax_error = self._run_syntax_check(code_result.code)
             if syntax_error:
                 contract["payload"]["issues"].append(f"Syntax error: {syntax_error}")
@@ -88,34 +98,43 @@ class CriticAgent:
                 contract["metadata"]["usage"]["duration_ms"] = int((time.time() - start_time) * 1000)
                 return contract
 
-            # 2. Семантический анализ через LLM
-            user_prompt = f"ТЗ пользователя:\n{task.original_prompt}\n\nСгенерированный код:\n{code_result.code}"
+            # --- ШАГ 2: Семантический анализ через LLM ---
+            # ПРАВКА: Используем промпт, загруженный в __init__
+            user_prompt = f"ТЗ: {task.original_prompt}\nКод:\n{code_result.code}"
+
+            # ПРАВКА: Параметры из Config
+            llm_params = Config.get_llm_params()
 
             response = self.client.chat.completions.create(
-                model=model_name,
                 messages=[
                     {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                response_format={"type": "json_object"},
-                temperature=0.1
+                **llm_params
             )
 
-            # Парсинг ответа
-            llm_data = json.loads(response.choices[0].message.content)
-            
-            contract["payload"]["is_valid"] = llm_data.get("is_valid", False)
-            contract["payload"]["issues"] = llm_data.get("issues", [])
-            contract["payload"]["recommendation"] = llm_data.get("recommendation", "retry")
-            
-            # Собираем метрики
-            if hasattr(response, 'usage') and response.usage:
-                contract["metadata"]["usage"]["total_tokens"] = response.usage.total_tokens
+            # Парсинг ответа модели с очисткой от Markdown
+            raw_result = response.choices[0].message.content.strip()
+            if raw_result.startswith("```"):
+                raw_result = raw_result.strip("`").strip()
+                if raw_result.startswith("json"):
+                    raw_result = raw_result[4:].strip()
 
+            llm_res = json.loads(raw_result)
+            
+            # Обновление контракта
+            contract["payload"]["is_valid"] = llm_res.get("is_valid", False)
+            contract["payload"]["issues"] = llm_res.get("issues", [])
+            contract["payload"]["recommendation"] = llm_res.get("recommendation", "retry")
+            
+            # Сбор метрик
+            if hasattr(response, 'usage') and response.usage:
+                contract["metadata"]["usage"]["total_tokens"] = getattr(response.usage, 'total_tokens', 0)
+            
             # Детект зацикливания
             if task.iteration >= 3 and not contract["payload"]["is_valid"]:
                 contract["payload"]["recommendation"] = "abort"
-                contract["payload"]["issues"].append("Превышено макс. число итераций исправления.")
+                contract["payload"]["issues"].append("Max iterations reached. Agent is stuck.")
 
             if contract["payload"]["is_valid"]:
                 contract["payload"]["recommendation"] = "pass"
@@ -133,8 +152,8 @@ if __name__ == "__main__":
     test_client = OpenAI(base_url="http://localhost:11434/v1", api_key="local-hackathon-key")
     validator = CriticAgent(client=test_client)
     
-    t = Task(original_prompt="Напиши функцию суммы", request_id="12345")
-    c = CodeResult(code="function sum(a,b) return a+b end", iteration=1)
+    test_task = Task(original_prompt="Напиши сумму", request_id="test-123", iteration=1)
+    test_code = CodeResult(code="function sum(a,b) return a + b end", iteration=1)
     
-    res = validator.validate(t, c)
-    print(json.dumps(res, indent=2, ensure_ascii=False))
+    result = validator.validate(test_task, test_code)
+    print(json.dumps(result, indent=2, ensure_ascii=False))
