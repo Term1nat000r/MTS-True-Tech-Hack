@@ -30,6 +30,9 @@ class Config:
     MODEL_NAME = "qwen2.5:7b"
     TEMPERATURE = 0.1  # Фиксируем для стабильности JSON в контрактах
     SEED = 42          # Для детерминированности ответов
+    TOP_K = 40
+    TOP_P = 0.9
+    MIN_P = 0.05
 
     # --- НАСТРОЙКИ ОРКЕСТРАТОРА ---
     # Максимальное количество попыток исправления кода Валидатором
@@ -67,15 +70,18 @@ class Config:
     ]
 
     @classmethod
+    @classmethod
     def get_llm_params(cls):
-        """Метод для получения стандартного набора параметров для всех агентов"""
         return {
             "model": cls.MODEL_NAME,
             "temperature": cls.TEMPERATURE,
             "max_tokens": cls.MAX_TOKENS_PER_RESPONSE,
             "seed": cls.SEED,
             "extra_body": {
-                "num_ctx": cls.CONTEXT_WINDOW
+                "num_ctx": cls.CONTEXT_WINDOW,
+                "top_k": cls.TOP_K,
+                "top_p": cls.TOP_P,
+                "min_p": cls.MIN_P  # Ollama поддерживает этот параметр
             }
         }
 
