@@ -3,6 +3,7 @@ import time
 import uuid
 import os
 from openai import OpenAI
+from core.config import Config
 
 class LocalQwenAdapter:
     # ПРАВКА: Принимаем готовый клиент извне
@@ -14,7 +15,7 @@ class LocalQwenAdapter:
         with open(prompt_path, "r", encoding="utf-8") as f:
             self.system_prompt = f.read().strip()
 
-    def adapt(self, raw_input: str, request_id: str = None, model_name: str = "qwen2.5:7b") -> dict:
+    def adapt(self, raw_input: str, request_id: str = None) -> dict:
         req_id = request_id or str(uuid.uuid4())
         start_time = time.time()
         
@@ -31,7 +32,7 @@ class LocalQwenAdapter:
                 "is_ready": False
             },
             "metadata": {
-                "model": model_name,
+                "model": Config.MODEL_NAME,
                 "usage": {
                     "total_tokens": 0,
                     "duration_ms": 0
@@ -43,14 +44,14 @@ class LocalQwenAdapter:
         raw_result = ""
         
         try:
+            # Получаем все настройки разом из конфига
+            llm_params = Config.get_llm_params()
             response = self.client.chat.completions.create(
-                model=model_name,
                 messages=[
                     {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": raw_input}
                 ],
-                response_format={"type": "json_object"},
-                temperature=0.1,
+                **llm_params # Магия Питона: распаковываем параметры (model, temperature, max_tokens и т.д.)
             )
             
             duration_ms = int((time.time() - start_time) * 1000)
