@@ -6,12 +6,9 @@
     "status": "string"                
   },
   "payload": {
-    // Заполняется, если status == "success"
     "content": "string",             
     "language": "lua",                
     "explanation": "string",          
-    
-    // Заполняется, если status == "clarification"
     "clarification_message": "string" 
   },
   "metadata": {
