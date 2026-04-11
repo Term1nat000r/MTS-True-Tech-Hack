@@ -1,6 +1,6 @@
 # Заглушки агентов
 
-from agents.contracts.base import BaseAgent, StubAgentOutput, StubAgentInput
+from src.agents.contracts.base import BaseAgent, StubAgentOutput, StubAgentInput
 # from agents.contracts.generator_contract import GeneratorOutput
 # from agents.contracts.validator_contract import ValidatorOutput
 # from agents.contracts.adapter_contract import AdapterOutput
