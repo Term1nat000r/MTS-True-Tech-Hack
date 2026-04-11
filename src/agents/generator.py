@@ -3,7 +3,7 @@ import time
 import os
 from openai import OpenAI
 from knowledge import get_generator_system_prompt # Импортируем нашу базу знаний
-from core.config import Config
+from api.config import Config
 
 class LocalQwenGenerator:
     # ПРАВКА: Принимаем готовый клиент извне
