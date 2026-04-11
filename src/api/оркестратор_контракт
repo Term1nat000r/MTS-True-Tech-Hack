@@ -1,0 +1,24 @@
+{
+  "header": {
+    "source_agent": "orchestrator",
+    "request_id": "uuid",             // из реквет контракта
+    "timestamp": 1712850000,
+    "status": "string"                // "success" | "error" | "clarification"
+  },
+  "payload": {
+    // Заполняется, если status == "success"
+    "content": "string",              // Финальный сгенерированный код или текст (прокинут из генератора)
+    "language": "lua",                // Язык для подсветки синтаксиса на клиенте
+    "explanation": "string",          // Пояснения от агента-генератора
+    
+    // Заполняется, если status == "clarification"
+    "clarification_message": "string" // Вопрос к пользователю от рефайнера, если ТЗ было неполным
+  },
+  "metadata": {
+    "usage": {
+      "total_tokens": 0,              // Сумма токенов, потраченных всеми агентами в рамках запроса
+      "total_duration_ms": 0          // Общее время работы всего пайплайна
+    }
+  },
+  "error": null                       // Объект ошибки, если status == "error" (например, отвалилась LLM или лимит ретраев валидатора)
+}
