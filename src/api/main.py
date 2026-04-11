@@ -5,8 +5,12 @@ from fastapi import FastAPI
 from src.agents.orchestrator import Orchestrator
 from src.agents.stubs import GeneratorAgent, ValidatorAgent, ClarifierAgent
 from src.agents.contracts.base import StubAgentInput
-from src.agents.contracts.input_contract import AgentInput
+from src.agents.contracts.request_contract import Request
 
+generator_agent = GeneratorAgent()
+validator_agent = ValidatorAgent()
+clarifier_agent = ClarifierAgent()
+orchestrator = Orchestrator(generator_agent=generator_agent, validator_agent=validator_agent, clarifier_agent=clarifier_agent)
 app = FastAPI()
 
 @app.get("/")
@@ -29,13 +33,7 @@ async def test_agent_clarifier():
     return result
 
 @app.post("/generate")
-async def generate_code():
-    generator_agent = GeneratorAgent()
-    validator_agent = ValidatorAgent()
-    clarifier_agent = ClarifierAgent()
-
-    orchestrator = Orchestrator(generator_agent=generator_agent, validator_agent=validator_agent, clarifier_agent=clarifier_agent)
-
-    result = await orchestrator.run()
+async def generate_code(request: Request):
+    result = await orchestrator.run(task=request.payload.raw_prompt, history=[h.model_dump() for h in request.payload.history])
 
     return result
