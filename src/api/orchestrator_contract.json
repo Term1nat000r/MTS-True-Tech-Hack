@@ -1,0 +1,31 @@
+{
+  "header": {
+    "source_agent": "orchestrator",
+    "request_id": "uuid",
+    "timestamp": 1712850000,
+    "status": "string"
+  },
+  "payload": {
+    "content": "string",
+    "language": "lua",
+    "explanation": "string",
+    "clarification_message": "string",
+    "history": [
+      {
+        "role": "user",
+        "content": "string"
+      },
+      {
+        "role": "assistant",
+        "content": "string"
+      }
+    ]
+  },
+  "metadata": {
+    "usage": {
+      "total_tokens": 0,
+      "total_duration_ms": 0
+    }
+  },
+  "error": null
+}
