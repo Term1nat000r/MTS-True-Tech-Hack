@@ -12,7 +12,7 @@ class Orchestrator:
         self.clarifier = clarifier_agent
 
     async def run(self, task: str, history: list) -> OrchestratorOutput:
-        messages = history + [History(role="user", content = task)]
+        messages = history + [{"role": "user", "content": task}]
 
         generator_result = await self.generator.run(StubAgentInput(data="Hello World"))
 
@@ -22,7 +22,7 @@ class Orchestrator:
             return OrchestratorOutput.stub()
 
         if generator_result.header.status == "clarification":
-            clarifier_result = await self.clarifier.run()
+            clarifier_result = await self.clarifier.run(StubAgentInput(data="Hello World"))
 
             if clarifier_result.header.status == "error":
 
@@ -37,7 +37,7 @@ class Orchestrator:
         max_retries = 3
         code = generator_result.payload.content
         for i in range(max_retries):
-            validator_result =  await self.validator.run()
+            validator_result =  await self.validator.run(StubAgentInput(data="Hello World"))
 
             if validator_result.header.status == "success":
 
@@ -47,7 +47,7 @@ class Orchestrator:
             messages = messages + [History(role="assistant", content= code),
                                    History(role="user", content=f"Код содержит ошибки: {validator_result.payload.issues}. Исправь.")]
 
-            generator_result = await self.generator.run()
+            generator_result = await self.generator.run(StubAgentInput(data="Hello World"))
             code = generator_result.payload.content
 
 
