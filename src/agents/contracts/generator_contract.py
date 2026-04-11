@@ -13,11 +13,11 @@ class Payload(BaseModel):
     explanation: str
     language: str
 
-class Usage:
+class Usage(BaseModel):
     total_tokens: int
     duration_ms: int
 
-class Metadata:
+class Metadata(BaseModel):
     model: str
     usage: Usage
 
@@ -26,3 +26,13 @@ class GeneratorOutput(BaseModel):
     payload: Payload
     metadata: Metadata
     error: str | None = None
+
+    @staticmethod
+    def stub() -> "GeneratorOutput":
+        header = Header(source_agent="generator", request_id="uuid", timestamp=0, status="success")
+        payload = Payload(content="Hello World", explanation="explanation", language="lua")
+
+        usage = Usage(total_tokens=1, duration_ms=1)
+        metadata = Metadata(model="qwen2.5:7b", usage=usage)
+
+        return GeneratorOutput(header=header, payload=payload, metadata=metadata)
