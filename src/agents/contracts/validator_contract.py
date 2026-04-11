@@ -32,8 +32,7 @@ class ValidatorOutput(BaseModel):
     @staticmethod
     def stub() -> "ValidatorOutput":
         header = Header(source_agent="generator", request_id="uuid", timestamp=0, status="success")
-        payload = Payload(is_valid=True, recommendation="")
-
+        payload = Payload(is_valid=True, recommendation="recommendation")
         usage = Usage(total_tokens=1, duration_ms=1)
         metadata = Metadata(model="qwen2.5:7b", usage=usage)
 
