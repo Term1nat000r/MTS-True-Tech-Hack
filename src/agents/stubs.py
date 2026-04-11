@@ -1,5 +1,6 @@
 # Заглушки агентов
-
+from src.agents.contracts.validator_contract import ValidatorOutput
+from src.agents.contracts.clarifier_contract import ClarifierOutput
 from src.agents.contracts.generator_contract import GeneratorOutput, Header, Payload, Metadata
 from src.agents.contracts.base import BaseAgent, StubAgentOutput, StubAgentInput
 # from agents.contracts.validator_contract import ValidatorOutput
@@ -12,14 +13,10 @@ class GeneratorAgent(BaseAgent):
 
 # Заглушка агента-валидатора кода
 class ValidatorAgent(BaseAgent):
-    async def run(self, inp: StubAgentInput) -> StubAgentOutput:
-        return StubAgentOutput(
-            result=f"[ЗАГЛУШКА] Здесь будет результат агента-валидатора"
-        )
+    async def run(self, inp: StubAgentInput) -> ValidatorOutput:
+        return ValidatorOutput.stub()
 
 # Заглушка агента-обработчика промптов
 class ClarifierAgent(BaseAgent):
-    async def run(self, inp: StubAgentInput) -> StubAgentOutput:
-        return StubAgentOutput(
-            result=f"[ЗАГЛУШКА] Здесь будет результат агента-уточнителя"
-        )
+    async def run(self, inp: StubAgentInput) -> ClarifierOutput:
+        return ClarifierOutput.stub()
