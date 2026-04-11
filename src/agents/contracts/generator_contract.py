@@ -3,10 +3,10 @@
 from pydantic import BaseModel
 
 class Header(BaseModel):
-    source_agent: str
+    source_agent: str # "adapter" | "generator" | "validator"
     request_id: str
     timestamp: int
-    status: str
+    status: str # "success" | "error" | "clarification"
 
 class Payload(BaseModel):
     content: str
