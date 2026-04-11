@@ -1,6 +1,7 @@
 import json
 import time
 import uuid
+import os
 from openai import OpenAI
 
 class LocalQwenAdapter:
@@ -11,20 +12,10 @@ class LocalQwenAdapter:
             timeout=60.0
         )
         
-        self.system_prompt = """
-        Ты — AI-адаптер. Принимай сырой запрос пользователя и формируй четкое ТЗ для следующего агента (генератора).
-        Возвращай СТРОГИЙ JSON. Никаких рассуждений.
-        
-        СТРУКТУРА:
-        {
-            "status": "success" | "clarification",
-            "display_text": "Вопрос пользователю или статус готовности",
-            "refined_prompt": "Готовое ТЗ для генератора (null, если нужно уточнение)",
-            "is_ready": true | false
-        }
-        
-        Если запрос неясен, status = "clarification", is_ready = false, refined_prompt = null.
-        """
+        # Читаем промпт напрямую из файла
+        prompt_path = os.path.join(os.path.dirname(__file__), "prompts", "clarifier.txt")
+        with open(prompt_path, "r", encoding="utf-8") as f:
+            self.system_prompt = f.read().strip()
 
     def adapt(self, raw_input: str, request_id: str = None, model_name: str = "qwen2.5:7b") -> dict:
         req_id = request_id or str(uuid.uuid4())
