@@ -1,0 +1,21 @@
+{
+  "header": {
+    "source_agent": "string",     // "adapter" | "generator" | "validator"
+    "request_id": "uuid",         // Тот самый из входного контракта
+    "timestamp": 1712850000,      // для замеров
+    "status": "string"            // "success" | "error" | "clarification"
+  },
+  "payload": { 
+      "display_text": "string",  // Вопрос пользователю или статус готовности
+      "refined_prompt": "string", // Готовое ТЗ для генератора (улучшает запрос пользователя для генератора) (null, если статус "clarification")
+      "is_ready": "boolean"      // Удобный флаг для оркестратора
+  },
+  "metadata": {
+    "model": "qwen2.5:7b",     // лучше явно указать
+    "usage": {
+      "total_tokens": 0,
+      "duration_ms": 0
+    }
+  },
+  "error": null // Сюда пишем объект ошибки, если статус "error"
+}

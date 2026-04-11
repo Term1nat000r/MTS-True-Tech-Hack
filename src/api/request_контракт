@@ -1,0 +1,18 @@
+{
+  "header": {
+    "source_agent": "user",
+    "request_id": "uuid",
+    "status": "new"
+  },
+  "payload": {
+    "raw_prompt": "string",
+    "settings": {
+      "target_language": "ru",
+      "mode": "code_generation",
+      "stream": false
+    }
+  },
+  "metadata": {
+    "timestamp": 1712850000,
+  }
+}
