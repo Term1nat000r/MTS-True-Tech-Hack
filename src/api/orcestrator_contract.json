@@ -6,7 +6,6 @@
     "status": "string"                
   },
   "payload": {
-    // Заполняется, если status == "success"
     "content": "string",              
     "language": "lua",                
     "explanation": "string",          
