@@ -5,12 +5,9 @@ import os
 from openai import OpenAI
 
 class LocalQwenAdapter:
-    def __init__(self, base_url: str = "http://localhost:11434/v1"):
-        self.client = OpenAI(
-            base_url=base_url,
-            api_key="local-hackathon-key",
-            timeout=60.0
-        )
+    # ПРАВКА: Принимаем готовый клиент извне
+    def __init__(self, client: OpenAI):
+        self.client = client
         
         # Читаем промпт напрямую из файла
         prompt_path = os.path.join(os.path.dirname(__file__), "prompts", "clarifier.txt")
@@ -89,12 +86,14 @@ class LocalQwenAdapter:
             contract["error"] = {"message": str(e)}
             return contract
 
+# ПРАВКА: Блок для локального тестирования файла
 if __name__ == "__main__":
-    adapter = LocalQwenAdapter()
+    # Создаем тестового клиента только для отладки этого файла
+    test_client = OpenAI(base_url="http://localhost:11434/v1", api_key="local-hackathon-key")
+    adapter = LocalQwenAdapter(client=test_client)
     
     messy_text = "Сделай мне кнопку для сайта, чтобы красная была"
     incoming_request_id = "550e8400-e29b-41d4-a716-446655440000"
     
     result = adapter.adapt(messy_text, request_id=incoming_request_id)
-    
     print(json.dumps(result, indent=2, ensure_ascii=False))
