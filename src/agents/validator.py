@@ -8,8 +8,6 @@ import uuid
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from openai import OpenAI
-
-# ИМПОРТЫ
 from core.config import Config
 from knowledge import get_validator_system_prompt # Предполагаем, что такая функция есть для валидатора
 
