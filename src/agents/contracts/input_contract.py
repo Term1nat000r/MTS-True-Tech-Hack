@@ -8,9 +8,7 @@ class Context(BaseModel):
 
 class Parameters(BaseModel):
     temperature: float
-
-    # МОЖЕТ ЛИ БЫТЬ ПУСТЫМ?
-    stop_tokens: List[str]
+    stop_tokens: List[str] = []
 
 class AgentConfig(BaseModel):
     target: str
@@ -24,7 +22,6 @@ class History(BaseModel):
 class Data(BaseModel):
     input_text: str
 
-    # МОЖЕТ ЛИ БЫТЬ ПУСТЫМ?
     history: List[History] = []
 
 # Класс данных на ввод для агента
