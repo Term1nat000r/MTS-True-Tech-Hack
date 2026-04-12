@@ -10,7 +10,7 @@ class Header(BaseModel):
 
 class Payload(BaseModel):
     display_text: str
-    refined_prompt: str
+    refined_prompt: str | None = None
     is_ready: bool
 
 class Usage(BaseModel):
