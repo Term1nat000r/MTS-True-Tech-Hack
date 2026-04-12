@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class Header(BaseModel):
     source_agent: str = "user"
     request_id: str
+    session_id: str
     status: str = "new"
 
 class Settings(BaseModel):
