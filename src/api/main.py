@@ -24,6 +24,8 @@ generator_agent = Generator(client=client)
 validator_agent = Validator(client=client)
 clarifier_agent = Clarifier(client=client)
 
+current_session_id = None
+
 # Создаем оркестратор с реальными агентами
 orchestrator = Orchestrator(
     generator_agent=generator_agent,
@@ -84,9 +86,16 @@ async def generate_code(request: Request):
 
 @app.post("/test_generate")
 async def generate_code(req: Request):
+    global current_session_id
+
     # 1. Генерируем ID запроса, если его нет
     req_id = req.header.request_id or str(uuid.uuid4())
-    session_id =  req.header.session_id or str(uuid.uuid4())
+    session_id = req.header.session_id or current_session_id or str(uuid.uuid4())
+
+    if not current_session_id:
+        current_session_id = session_id
+    elif req.header.session_id:
+        current_session_id = req.header.session_id
 
     task = req.payload.raw_prompt
 
@@ -123,4 +132,4 @@ async def generate_code(req: Request):
     history_storage.append(session_id=session_id, role="assistant", content=result.payload.content)
 
     # 4. Возвращаем ответ в формате, который ждет жюри
-    return {"session_id": session_id, "code": result.payload.content}
+    return {"code": result.payload.content}
