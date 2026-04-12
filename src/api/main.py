@@ -6,12 +6,14 @@ from src.agents.orchestrator import Orchestrator
 from src.agents.generator import Generator
 from src.agents.validator import Validator, Task, CodeResult
 from src.agents.clarifier import Clarifier
+from src.api.llm_client import LLMClient
 
-from src.api.llm_client import llm
 from src.agents.contracts.request_contract import Request
 
 # Инициализируем клиент и реальных агентов
+llm = LLMClient()
 client = llm.get_instance()
+
 generator_agent = Generator(client=client)
 validator_agent = Validator(client=client)
 clarifier_agent = Clarifier(client=client)
@@ -74,3 +76,19 @@ async def generate_code(request: Request):
     # 4. Возвращаем ответ в формате, который ждет жюри
     return {"code": content}
 
+@app.get("/test_generate")
+async def generate_code():
+    # 1. Генерируем ID запроса, если его нет
+    req_id = str(uuid.uuid4())
+
+    # 2. Запускаем "мозги" (оркестратор)
+    result = await orchestrator.run(
+        task="отсоси мне яйца",
+        request_id=req_id
+    )
+
+    # 3. Безопасно достаем код (проверяем, объект это или словарь)
+    content = result.payload.content
+
+    # 4. Возвращаем ответ в формате, который ждет жюри
+    return {"code": content}

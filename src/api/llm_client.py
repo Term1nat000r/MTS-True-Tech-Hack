@@ -22,6 +22,3 @@ class LLMClient:
     def get_instance(self) -> OpenAI:
         """Возвращает настроенный экземпляр OpenAI SDK."""
         return self.client
-
-# Создаем один экземпляр на всё приложение
-llm = LLMClient()
