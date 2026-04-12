@@ -10,11 +10,15 @@ from src.agents.validator import Validator, Task, CodeResult
 from src.agents.clarifier import Clarifier
 from src.api.llm_client import LLMClient
 
+from src.db.history_db import SessionStorage
+
 from src.agents.contracts.request_contract import Request
 
 # Инициализируем клиент и реальных агентов
 llm = LLMClient()
 client = llm.get_instance()
+
+history_storage = SessionStorage()
 
 generator_agent = Generator(client=client)
 validator_agent = Validator(client=client)
@@ -82,6 +86,7 @@ async def generate_code(request: Request):
 async def generate_code():
     # 1. Генерируем ID запроса, если его нет
     req_id = str(uuid.uuid4())
+    history = req.history
 
     # 2. Запускаем "мозги" (оркестратор)
     result = await orchestrator.run(

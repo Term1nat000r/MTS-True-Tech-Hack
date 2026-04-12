@@ -1,11 +1,14 @@
-import os
+from os import path, makedirs
 import sqlite3
 
 from src.agents.contracts.input_contract import History
 
+BASE_DIR = path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
+
 class SessionStorage:
-    def __init__(self, db_path:str = "data/sessions.db"):
-        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+    def __init__(self):
+        db_path = path.join(BASE_DIR, "data", "sessions.db")
+        makedirs(path.dirname(db_path), exist_ok=True)
 
         self.conn = sqlite3.connect(db_path)
         self.conn.execute("""
