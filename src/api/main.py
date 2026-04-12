@@ -93,7 +93,11 @@ async def generate_code():
     if result.header.status == "error":
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=result.error
+            detail={
+                "message": result.payload.display_text,
+                "error": result.error,
+                "failed_agent": result.payload.failed_agent
+            }
         )
 
     # Вывод сообщения, если требуется уточнение
