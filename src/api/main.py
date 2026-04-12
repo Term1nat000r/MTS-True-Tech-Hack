@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from starlette import status
+
 import uuid
 from pydantic import BaseModel
 # Импортируем ОРКЕСТРАТОР и реальные КЛАССЫ агентов
@@ -86,6 +88,13 @@ async def generate_code():
         task="Помоги мне",
         request_id=req_id
     )
+
+    # Если при работе оркестратора произошла ошибка
+    if result.header.status == "error":
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=result.error
+        )
 
     # Вывод сообщения, если требуется уточнение
     if result.header.status == "clarification":
