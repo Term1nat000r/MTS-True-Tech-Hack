@@ -82,16 +82,21 @@ async def generate_code(request: Request):
     # 4. Возвращаем ответ в формате, который ждет жюри
     return {"code": content}
 
-@app.get("/test_generate")
-async def generate_code():
+@app.post("/test_generate")
+async def generate_code(req: Request):
     # 1. Генерируем ID запроса, если его нет
-    req_id = str(uuid.uuid4())
-    history = req.history
+    req_id = req.header.request_id or str(uuid.uuid4())
+    session_id =  req.header.session_id or str(uuid.uuid4())
+
+    task = req.payload.raw_prompt
+
+    history = history_storage.get(session_id=session_id)
 
     # 2. Запускаем "мозги" (оркестратор)
     result = await orchestrator.run(
-        task="Помоги мне",
-        request_id=req_id
+        task=task,
+        request_id=req_id,
+        history=history
     )
 
     # Если при работе оркестратора произошла ошибка
@@ -105,9 +110,17 @@ async def generate_code():
             }
         )
 
+    # Добавляем запрос пользователя в историю
+    history_storage.append(session_id=session_id, role="user", content=task)
+
     # Вывод сообщения, если требуется уточнение
     if result.header.status == "clarification":
-        return {"message": result.payload.display_text}
+        # Добавляем ответ ассистента если нужно уточнение в историю
+        history_storage.append(session_id=session_id, role="assistant", content=result.payload.display_text)
+        return {"session_id": session_id, "message": result.payload.display_text}
+
+    # Добавляем ответ ассистента, если все гуд
+    history_storage.append(session_id=session_id, role="assistant", content=result.payload.content)
 
     # 4. Возвращаем ответ в формате, который ждет жюри
-    return {"code": result.payload.content}
+    return {"session_id": session_id, "code": result.payload.content}
