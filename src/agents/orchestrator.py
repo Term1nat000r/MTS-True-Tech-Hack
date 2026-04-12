@@ -1,5 +1,4 @@
-from pip._internal import metadata
-
+from src.agents.contracts.input_contract import History
 from src.agents.contracts.orchestrator_contract import ErrorPayload
 from src.agents.contracts.orchestrator_contract import ClarificationPayload
 from src.agents.contracts.orchestrator_contract import OrchestratorOutput
@@ -11,7 +10,8 @@ class Orchestrator:
         self.validator = validator_agent
         self.clarifier = clarifier_agent
 
-    async def run(self, task: str, request_id: str) -> OrchestratorOutput:
+    async def run(self, task: str, request_id: str, history: list[History]) -> OrchestratorOutput:
+
         # 1. Уточнение задачи
         cl_res = self.clarifier.adapt(task, request_id)
         if cl_res["header"]["status"] == "clarification":
