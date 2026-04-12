@@ -26,6 +26,10 @@ class ClarificationPayload(BaseModel):
     refined_prompt: str | None = None
     is_ready: bool
 
+class ErrorPayload(BaseModel):
+    display_text: str
+    failed_agent: str
+
 class ResultPayload(BaseModel):
     content: str
     language: str = "lua"
@@ -35,7 +39,7 @@ class ResultPayload(BaseModel):
 
 class OrchestratorOutput(BaseModel):
     header: Header
-    payload: Union[ResultPayload, ClarificationPayload]
+    payload: Union[ResultPayload, ClarificationPayload, ErrorPayload]
     metadata: Metadata
     error: str | None = None
 
