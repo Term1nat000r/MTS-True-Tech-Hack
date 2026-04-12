@@ -1,3 +1,4 @@
+import time
 from os import path, makedirs
 import sqlite3
 
@@ -21,11 +22,11 @@ class SessionStorage:
         """)
 
     def get(self, session_id: str) -> list[History]:
-        cursor = self.conn.execute("SELECT role, content FROM history WHERE  session_id = ?", session_id)
+        cursor = self.conn.execute("SELECT role, content FROM history WHERE  session_id = ?", (session_id,))
         rows = cursor.fetchall()
 
         return [History(role=row[0], content=row[1]) for row in rows]
 
-    def append(self, session_id: str, role: str, content: str, timestamp: int):
-        self.conn.execute("INSERT INTO history VALUES (?, ?, ?, ?)", (session_id, role, content, timestamp))
+    def append(self, session_id: str, role: str, content: str):     
+        self.conn.execute("INSERT INTO history VALUES (?, ?, ?, ?)", (session_id, role, content, int(time.time())))
         self.conn.commit()
