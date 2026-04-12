@@ -83,12 +83,13 @@ async def generate_code():
 
     # 2. Запускаем "мозги" (оркестратор)
     result = await orchestrator.run(
-        task="отсоси мне яйца",
+        task="Помоги мне",
         request_id=req_id
     )
 
-    # 3. Безопасно достаем код (проверяем, объект это или словарь)
-    content = result.payload.content
+    # Вывод сообщения, если требуется уточнение
+    if result.header.status == "clarification":
+        return {"message": result.payload.display_text}
 
     # 4. Возвращаем ответ в формате, который ждет жюри
-    return {"code": content}
+    return {"code": result.payload.content}

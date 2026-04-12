@@ -1,3 +1,6 @@
+from pip._internal import metadata
+
+from src.agents.contracts.orchestrator_contract import ClarificationPayload
 from src.agents.contracts.orchestrator_contract import OrchestratorOutput
 from src.agents.validator import Task, CodeResult
 
@@ -11,7 +14,11 @@ class Orchestrator:
         # 1. Уточнение задачи
         cl_res = self.clarifier.adapt(task, request_id)
         if cl_res["header"]["status"] == "clarification":
-            return OrchestratorOutput(**cl_res)
+            return OrchestratorOutput(
+                header=cl_res["header"],
+                payload=ClarificationPayload(**cl_res["payload"]),
+                metadata=cl_res["metadata"]
+            )
 
         refined_prompt = cl_res["payload"].get("refined_prompt") or task
         
@@ -20,7 +27,7 @@ class Orchestrator:
         code = gen_res["payload"]["content"]
         
         # 3. Цикл самоисправления (до 3-х попыток)
-        for i in range(1, 4):
+        for i in range(3):
             val_res = self.validator.validate(
                 Task(original_prompt=refined_prompt, request_id=request_id, iteration=i),
                 CodeResult(code=code, iteration=i)
