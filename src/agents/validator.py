@@ -8,8 +8,8 @@ import uuid
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from openai import OpenAI
-from api.config import Config
-from api.knowledge import get_validator_system_prompt # Предполагаем, что такая функция есть для валидатора
+from src.api.config import Config
+from src.api.knowledge import get_validator_system_prompt # Предполагаем, что такая функция есть для валидатора
 
 # ==========================================
 # 1. КОНТРАКТЫ ДАННЫХ ДЛЯ ВНУТРЕННЕЙ ЛОГИКИ
@@ -28,7 +28,7 @@ class CodeResult(BaseModel):
 # 2. АГЕНТ 3: ВАЛИДАТОР (Validator Agent)
 # ==========================================
 
-class CriticAgent:
+class Validator:
     # ПРАВКА: Инициализация по примеру
     def __init__(self, client: OpenAI, model_name: str = Config.MODEL_NAME):
         self.client = client
@@ -95,12 +95,9 @@ class CriticAgent:
                 contract["payload"]["recommendation"] = "retry"
                 contract["metadata"]["usage"]["duration_ms"] = int((time.time() - start_time) * 1000)
                 return contract
-
-            # --- ШАГ 2: Семантический анализ через LLM ---
-            # ПРАВКА: Используем промпт, загруженный в __init__
-            user_prompt = f"ТЗ: {task.original_prompt}\nКод:\n{code_result.code}"
-
-            # ПРАВКА: Параметры из Config
+# Очищаем код от обертки перед проверкой LLM
+            clean_code = code_result.code.replace("jsonString lua{", "").replace("}lua", "").strip()
+            user_prompt = f"ТЗ: {task.original_prompt}\nПроверь только этот Lua код:\n{clean_code}"
             llm_params = Config.get_llm_params()
 
             response = self.client.chat.completions.create(

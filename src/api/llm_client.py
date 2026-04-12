@@ -1,7 +1,7 @@
 # api/llm_client.py
 import logging
 from openai import OpenAI
-from api.config import Config
+from src.api.config import Config
 
 logger = logging.getLogger(__name__)
 

@@ -1,39 +1,76 @@
-# Главный файл сервера
-
 from fastapi import FastAPI
-
+import uuid
+from pydantic import BaseModel
+# Импортируем ОРКЕСТРАТОР и реальные КЛАССЫ агентов
 from src.agents.orchestrator import Orchestrator
-from src.agents.stubs import GeneratorAgent, ValidatorAgent, ClarifierAgent
-from src.agents.contracts.base import StubAgentInput
+from src.agents.generator import Generator
+from src.agents.validator import Validator, Task, CodeResult
+from src.agents.clarifier import Clarifier
+
+from src.api.llm_client import llm
 from src.agents.contracts.request_contract import Request
 
-generator_agent = GeneratorAgent()
-validator_agent = ValidatorAgent()
-clarifier_agent = ClarifierAgent()
-orchestrator = Orchestrator(generator_agent=generator_agent, validator_agent=validator_agent, clarifier_agent=clarifier_agent)
+# Инициализируем клиент и реальных агентов
+client = llm.get_instance()
+generator_agent = Generator(client=client)
+validator_agent = Validator(client=client)
+clarifier_agent = Clarifier(client=client)
+
+# Создаем оркестратор с реальными агентами
+orchestrator = Orchestrator(
+    generator_agent=generator_agent,
+    validator_agent=validator_agent,
+    clarifier_agent=clarifier_agent
+)
+
 app = FastAPI()
 
 @app.get("/")
 def read_root():
-    return {"message": "Hello World"}
+    return {"message": "MTS Lua Generator Active"}
 
+# Твои тестовые эндпоинты (теперь работают с реальным AI)
 @app.get("/test_gen")
 async def test_agent_generator():
-    result = await GeneratorAgent().run(StubAgentInput(data="Hello World"))
-    return result
+    return generator_agent.generate("Напиши print('hello')", str(uuid.uuid4()))
 
 @app.get("/test_val")
 async def test_agent_validator():
-    result = await ValidatorAgent().run(StubAgentInput(data="Hello World"))
-    return result
+    # Проверка работы критика
+    task = Task(original_prompt="тест", request_id=str(uuid.uuid4()))
+    code = CodeResult(code="lua{ print('hello') }lua", iteration=1)
+    return validator_agent.validate(task, code)
 
 @app.get("/test_cl")
 async def test_agent_clarifier():
-    result = await ClarifierAgent().run(StubAgentInput(data="Hello World"))
-    return result
+    # Проверка работы уточнения промпта
+    return clarifier_agent.adapt("Сделай что-нибудь", str(uuid.uuid4()))
 
+# Главный вход для жюри
 @app.post("/generate")
 async def generate_code(request: Request):
-    result = await orchestrator.run(task=request.payload.raw_prompt, history=[h.model_dump() for h in request.payload.history])
+    # 1. Генерируем ID запроса, если его нет
+    req_id = request.header.request_id or str(uuid.uuid4())
 
-    return result
+    # 2. Запускаем "мозги" (оркестратор)
+    result = await orchestrator.run(
+        task=request.payload.raw_prompt,
+        request_id=req_id
+    )
+
+    # 3. Безопасно достаем код (проверяем, объект это или словарь)
+    content = ""
+    try:
+        # Если оркестратор вернул объект OrchestratorOutput
+        if hasattr(result, 'payload'):
+            content = result.payload.content
+        # Если оркестратор вернул обычный словарь
+        elif isinstance(result, dict):
+            content = result.get("payload", {}).get("content", "")
+    except Exception as e:
+        print(f"Ошибка при разборе ответа: {e}")
+        content = "Ошибка генерации кода"
+
+    # 4. Возвращаем ответ в формате, который ждет жюри
+    return {"code": content}
+

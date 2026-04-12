@@ -3,9 +3,9 @@ import time
 import uuid
 import os
 from openai import OpenAI
-from api.config import Config
+from src.api.config import Config
 
-class LocalQwenAdapter:
+class Clarifier:
     def __init__(self, client: OpenAI):
         self.client = client
         prompt_path = Config.PROMPTS_DIR / "clarifier.txt"
