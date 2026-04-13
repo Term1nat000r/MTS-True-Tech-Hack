@@ -185,3 +185,10 @@ async def create_session(session_id: str):
     current_session_id = None
 
     return {"message": "Сессия успешно удалена"}
+
+@app.get("/close_current_session")
+async def close_current_session():
+    global current_session_id
+    current_session_id = None
+
+    return {"message": "Сессия успешно покинута"}
