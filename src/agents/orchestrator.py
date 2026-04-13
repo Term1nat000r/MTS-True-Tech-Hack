@@ -15,13 +15,19 @@ class Orchestrator:
         # 1. Уточнение задачи
         cl_res = self.clarifier.adapt(task, history=history, session_id=session_id)
         if cl_res["header"]["status"] == "clarification":
+            # Вытаскиваем вопрос агента
+            question = cl_res["payload"].get("display_text", "Мне нужно больше деталей для написания кода.")
             return OrchestratorOutput(
                 header=cl_res["header"],
-                payload=ClarificationPayload(**cl_res["payload"]),
+                payload=ClarificationPayload(
+                    display_text=question,
+                    refined_prompt=None,
+                    # Заворачиваем вопрос в Lua-комментарий, чтобы фронт его показал!
+                    content=f"jsonString lua{{\n-- [Уточняющий вопрос от AI]:\n-- {question}\n}}lua"
+                ),
                 metadata=cl_res["metadata"]
             )
 
-        # Если уточнитель выдал ошибку
         if cl_res["header"]["status"] == "error":
             return OrchestratorOutput(
                 header=cl_res["header"],
@@ -32,21 +38,22 @@ class Orchestrator:
 
         refined_prompt = cl_res["payload"].get("refined_prompt") or task
 
-        # 2. Первая попытка генерации кода
         gen_res = self.generator.generate(refined_prompt, history=history)
 
-        # Если генератор выдал ошибку
         if gen_res["header"]["status"] == "error":
+            error_msg = gen_res.get("error", {}).get("message", "Unknown logic error")
             return OrchestratorOutput(
-                header=gen_res["header"],
-                payload=ErrorPayload(display_text="Произошла ошибка в работе генератора", failed_agent="generator"),
-                metadata=gen_res["metadata"],
-                error=gen_res["error"]["message"]
+                header={"source_agent": "orchestrator", "timestamp": gen_res["header"]["timestamp"], "status": "clarification"},
+                payload=ClarificationPayload(
+                    display_text=f"Я не могу сгенерировать код. Причина: {error_msg}",
+                    refined_prompt=None,
+                    content=f"jsonString lua{{ -- Ошибка генерации: {error_msg} }}lua"
+                ),
+                metadata=gen_res["metadata"]
             )
 
         code = gen_res["payload"]["content"]
 
-        # 3. Цикл самоисправления (до 3-х попыток)
         for i in range(1, 4):
             val_res = self.validator.validate(
                 Task(original_prompt=refined_prompt, iteration=i),
@@ -54,7 +61,6 @@ class Orchestrator:
                 session_id=session_id
             )
 
-            # Если валидатор выдал ошибку
             if val_res["header"]["status"] == "error":
                 return OrchestratorOutput(
                     header=val_res["header"],
@@ -63,16 +69,13 @@ class Orchestrator:
                     error = val_res["error"]["message"]
                 )
 
-            # Если валидатор подтвердил код — выходим
             if val_res["payload"]["is_valid"]:
                 break
             
-            # Если есть ошибки — просим генератор исправить их
             issues = val_res["payload"].get("issues", [])
             retry_prompt = f"Исправь ошибки в Lua коде: {issues}\nТЗ: {refined_prompt}\nТекущий код: {code}"
 
             gen_res = self.generator.generate(retry_prompt, history=history)
-            # Если генератор выдал ошибку
             if gen_res["header"]["status"] == "error":
                 return OrchestratorOutput(
                     header=gen_res["header"],
@@ -83,16 +86,13 @@ class Orchestrator:
 
             code = gen_res["payload"]["content"]
 
-        # Перед тем как отдавать результат, добавим пустое поле, которое требует контракт
         if "payload" in gen_res:
             if "clarification_message" not in gen_res["payload"]:
                 gen_res["payload"]["clarification_message"] = ""
 
-        # 4. Проверяем, видел ли пользователь код ранее (есть ли ответ assistant в истории)
         user_already_reviewed = any(h.role == "assistant" for h in history)
 
         if not user_already_reviewed:
-            # Первый прогон — отправляем код пользователю на просмотр
             return OrchestratorOutput(
                 header={"source_agent": "orchestrator", "timestamp": gen_res["header"]["timestamp"], "status": "clarification"},
                 payload=ClarificationPayload(
@@ -103,5 +103,4 @@ class Orchestrator:
                 metadata=gen_res["metadata"]
             )
 
-        # Второй прогон — отдаём финальный результат
         return OrchestratorOutput(**gen_res)

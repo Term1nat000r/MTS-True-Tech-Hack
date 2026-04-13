@@ -47,6 +47,10 @@ class Generator:
 
             raw_result = response.choices[0].message.content.strip()
             parsed = self._parse_model_output(raw_result)
+            if parsed.get("status") == "error":
+                contract["header"]["status"] = "error"
+                contract["error"] = {"message": parsed.get("explanation", "Unknown error"), "raw_response": raw_result}
+                return contract
 
             contract["header"]["status"] = "success"
             contract["payload"]["content"] = parsed["content"]
@@ -72,26 +76,36 @@ class Generator:
             try:
                 data = json.loads(raw[first:last + 1])
                 if isinstance(data, dict):
-                    content = data.get("content") or data.get("code") or ""
-                    if content:
+                    # Если модель сама поняла, что задача невыполнима (Тест 8)
+                    if data.get("status") == "error":
                         return {
-                            "content": str(content).strip(),
-                            "explanation": str(data.get("explanation", "")).strip(),
-                            "language": str(data.get("language", "lua")).strip() or "lua",
+                            "status": "error",
+                            "content": "",
+                            "explanation": str(data.get("explanation", "LLM error")),
+                            "language": "lua"
                         }
+                    
+                    content = data.get("content") or data.get("code") or ""
+                    return {
+                        "status": "success",
+                        "content": str(content).strip(),
+                        "explanation": str(data.get("explanation", "")).strip(),
+                        "language": str(data.get("language", "lua")).strip() or "lua",
+                    }
             except (json.JSONDecodeError, ValueError):
                 pass
 
-        # Markdown blocks
+        # Markdown blocks fallback
         match = self._RE_LUA_BLOCK.search(raw) or self._RE_ANY_BLOCK.search(raw)
         if match:
             return {
+                "status": "success",
                 "content": match.group(1).strip(),
                 "explanation": self._RE_ANY_BLOCK.sub("", raw).strip(),
                 "language": "lua",
             }
 
-        return {"content": raw.strip(), "explanation": "", "language": "lua"}
+        return {"status": "success", "content": raw.strip(), "explanation": "", "language": "lua"}
 
     @classmethod
     def _strip_lowcode_wrap(cls, content: str) -> str:

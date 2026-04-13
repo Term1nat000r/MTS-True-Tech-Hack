@@ -3,6 +3,7 @@ import subprocess
 import tempfile
 import os
 import time
+import re
 from typing import Optional
 from pydantic import BaseModel
 from openai import OpenAI
@@ -30,14 +31,14 @@ class Validator:
             base_prompt = "Ты Senior Lua Validator. Проверь код на логику и соответствие ТЗ."
         self.system_prompt = get_validator_system_prompt(base_prompt)
 
-    @staticmethod
-    def _strip_wrapper(code: str) -> str:
-        s = code.strip()
-        if s.startswith("jsonString lua{"):
-            s = s[len("jsonString lua{"):]
-        if s.endswith("}lua"):
-            s = s[:-len("}lua")]
-        return s.strip()
+    _RE_LOWCODE_WRAP = re.compile(r"jsonString\s+lua\s*\{(.*)\}\s*lua\s*$", re.DOTALL | re.IGNORECASE)
+
+    @classmethod
+    def _strip_wrapper(cls, code: str) -> str:
+        if not code:
+            return ""
+        m = cls._RE_LOWCODE_WRAP.search(code.strip())
+        return m.group(1).strip() if m else code.strip()
 
     def _run_syntax_check(self, lua_code: str) -> Optional[str]:
         fd, path = tempfile.mkstemp(suffix=".lua")
