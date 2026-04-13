@@ -1,3 +1,4 @@
+from src.agents.contracts.orchestrator_contract import Header
 from src.agents.contracts.input_contract import History
 from src.agents.contracts.orchestrator_contract import ErrorPayload
 from src.agents.contracts.orchestrator_contract import ClarificationPayload
@@ -101,12 +102,15 @@ class Orchestrator:
                 gen_res["payload"]["clarification_message"] = ""
 
         # 4. Проверяем, видел ли пользователь код ранее (есть ли запись validator в истории)
-        user_already_reviewed = any(h.role == "validator" for h in history)
+        user_already_reviewed = any(h.role == "assistant" for h in history)
+
 
         if not user_already_reviewed:
             # Первый прогон — отправляем код пользователю на просмотр
             return OrchestratorOutput(
-                header={"source_agent": "orchestrator", "timestamp": gen_res["header"]["timestamp"], "status": "clarification"},
+                header=Header(
+                    timestamp=gen_res["header"]["timestamp"], status="clarification"
+                ),
                 payload=ClarificationPayload(
                     display_text=f"Вот сгенерированный код:\n\n```lua\n{code}\n```\n\nПодтвердите или укажите, что изменить.",
                     refined_prompt=None,
