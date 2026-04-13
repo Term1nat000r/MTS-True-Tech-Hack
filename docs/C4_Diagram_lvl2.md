@@ -1,3 +1,4 @@
+```mermaid
 flowchart TD
     Developer["Разработчик / Жюри"]
 
@@ -34,3 +35,4 @@ flowchart TD
     LLMClient -- "HTTP" --> Ollama
     Validator -- "запускает код (планируется)" --> Docker
     SessionDB -- "хранит .db файл" --> FS
+```
