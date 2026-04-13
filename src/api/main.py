@@ -16,7 +16,6 @@ from src.db.history_db import SessionStorage
 
 # Контракты запросов
 from src.agents.contracts.request_contract import Request
-from src.agents.contracts.change_session_request_contract import ChangeSessionRequest
 
 # Инициализируем клиент и реальных агентов
 llm = LLMClient()
@@ -164,14 +163,13 @@ async def get_sessions():
 async def get_current_session():
     return {"session_id": current_session_id}
 
-@app.post("/change_session")
-async def change_session(req: ChangeSessionRequest):
+@app.post("/change_session/{session_id}")
+async def change_session(session_id: str):
     global current_session_id
-    new_session_id = req.payload.session_id
 
-    current_session_id = new_session_id
+    current_session_id = session_id
 
-    return {"session_id": new_session_id}
+    return {"session_id": session_id}
 
 @app.post("/create_session")
 async def create_session():
