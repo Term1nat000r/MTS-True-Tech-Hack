@@ -103,13 +103,7 @@ class Validator:
 
             if contract["payload"]["is_valid"]:
                 contract["payload"]["recommendation"] = "pass"
-                # Сохраняем готовый код в историю сессии
-                if self.history_storage and session_id:
-                    self.history_storage.append_history(
-                        session_id=session_id,
-                        role="validator",
-                        content=code_result.code
-                    )
+
             elif task.iteration >= 3:
                 contract["payload"]["recommendation"] = "abort"
                 contract["payload"]["issues"].append("Max iterations reached.")

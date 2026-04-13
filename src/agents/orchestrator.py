@@ -101,23 +101,5 @@ class Orchestrator:
             if "clarification_message" not in gen_res["payload"]:
                 gen_res["payload"]["clarification_message"] = ""
 
-        # 4. Проверяем, видел ли пользователь код ранее (есть ли запись validator в истории)
-        user_already_reviewed = any(h.role == "assistant" for h in history)
-
-
-        if not user_already_reviewed:
-            # Первый прогон — отправляем код пользователю на просмотр
-            return OrchestratorOutput(
-                header=Header(
-                    timestamp=gen_res["header"]["timestamp"], status="clarification"
-                ),
-                payload=ClarificationPayload(
-                    display_text=f"Вот сгенерированный код:\n\n```lua\n{code}\n```\n\nПодтвердите или укажите, что изменить.",
-                    refined_prompt=None,
-                    content=code,
-                ),
-                metadata=gen_res["metadata"]
-            )
-
         # Второй прогон — отдаём финальный результат
         return OrchestratorOutput(**gen_res)

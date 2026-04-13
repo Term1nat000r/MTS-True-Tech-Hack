@@ -59,14 +59,6 @@ class Clarifier:
                 contract["payload"]["refined_prompt"] = refined
                 contract["payload"]["is_ready"] = False
 
-            # Сохраняем refined_prompt в историю сессии
-            if refined and self.history_storage and session_id:
-                self.history_storage.append_history(
-                    session_id=session_id,
-                    role="clarifier",
-                    content=refined
-                )
-
         except Exception as e:
             contract["error"] = {"message": str(e)}
 
