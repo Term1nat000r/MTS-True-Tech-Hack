@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 class Header(BaseModel):
     source_agent: str = "orchestrator"
-    request_id: str
+
     timestamp: int
     status: str
 
