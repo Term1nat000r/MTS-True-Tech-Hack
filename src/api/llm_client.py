@@ -11,7 +11,8 @@ class LLMClient:
         # Это обеспечит работу в Docker (через http://ollama:11434)
         self.client = OpenAI(
             base_url=Config.OLLAMA_URL,
-            api_key=Config.API_KEY
+            api_key=Config.API_KEY,
+            timeout=Config.REQUEST_TIMEOUT
         )
         logger.info(f"LLM Client инициализирован для {Config.OLLAMA_URL}")
 

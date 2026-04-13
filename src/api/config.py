@@ -3,7 +3,7 @@ from pathlib import Path
 
 class Config:
     BASE_DIR = Path(__file__).resolve().parent
-    OLLAMA_URL = os.getenv("OLLAMA_API_URL", "http://192.168.1.67:11434/v1")
+    OLLAMA_URL = os.getenv("OLLAMA_API_URL", "http://localhost:11434/v1")
     API_KEY = os.getenv("LLM_API_KEY", "local-hackathon-key")
     
     # Директории
@@ -12,9 +12,9 @@ class Config:
 
     # --- ТРЕБОВАНИЯ ПЛАТФОРМЫ ---
     VRAM_LIMIT_GB = 8 
-    CONTEXT_WINDOW = 4096 
-    MAX_TOKENS_PER_RESPONSE = 1024
-    REQUEST_TIMEOUT = 120.0
+    CONTEXT_WINDOW = 4096
+    MAX_TOKENS_PER_RESPONSE = 2048
+    REQUEST_TIMEOUT = 300.0
 
     # --- НАСТРОЙКИ МОДЕЛИ ---
     MODEL_NAME = "qwen2.5-coder:7b"
@@ -71,6 +71,7 @@ class Config:
             "model": cls.MODEL_NAME,
             "temperature": cls.TEMPERATURE,
             "max_tokens": cls.MAX_TOKENS_PER_RESPONSE,
+            "timeout": cls.REQUEST_TIMEOUT,
             "seed": cls.SEED,
             "response_format": cls.RESPONSE_FORMAT,
             "extra_body": {

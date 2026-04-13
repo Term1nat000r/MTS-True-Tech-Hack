@@ -7,12 +7,13 @@ FIXED_QUESTION = "Укажите, пожалуйста, какие переме�
 
 
 class Clarifier:
-    def __init__(self, client: OpenAI):
+    def __init__(self, client: OpenAI, history_storage=None):
         self.client = client
+        self.history_storage = history_storage
         with open(Config.PROMPTS_DIR / "clarifier.txt", "r", encoding="utf-8") as f:
             self.system_prompt = f.read().strip()
 
-    def adapt(self, raw_input: str) -> dict:
+    def adapt(self, raw_input: str, session_id: str = "") -> dict:
         contract = {
             "header": {"source_agent": "adapter", "timestamp": int(time.time()), "status": "error"},
             "payload": {"display_text": "", "refined_prompt": None, "is_ready": False},
@@ -39,16 +40,32 @@ class Clarifier:
                     raw = raw[4:].strip()
 
             llm_data = json.loads(raw)
+            refined = llm_data.get("refined_prompt")
+            is_ready = llm_data.get("is_ready", False)
 
-            # Always include at least one fixed clarifying question
-            display = llm_data.get("display_text", "")
-            if FIXED_QUESTION not in display:
-                display = f"{display}\n\n{FIXED_QUESTION}".strip()
+            if is_ready and refined:
+                # Промпт достаточно ясен — идём на генерацию
+                contract["header"]["status"] = "success"
+                contract["payload"]["refined_prompt"] = refined
+                contract["payload"]["is_ready"] = True
+            else:
+                # Нужно уточнение — задаём вопрос пользователю
+                display = llm_data.get("display_text", "")
+                if FIXED_QUESTION not in display:
+                    display = f"{display}\n\n{FIXED_QUESTION}".strip()
 
-            contract["header"]["status"] = "clarification"
-            contract["payload"]["display_text"] = display
-            contract["payload"]["refined_prompt"] = llm_data.get("refined_prompt")
-            contract["payload"]["is_ready"] = False
+                contract["header"]["status"] = "clarification"
+                contract["payload"]["display_text"] = display
+                contract["payload"]["refined_prompt"] = refined
+                contract["payload"]["is_ready"] = False
+
+            # Сохраняем refined_prompt в историю сессии
+            if refined and self.history_storage and session_id:
+                self.history_storage.append_history(
+                    session_id=session_id,
+                    role="clarifier",
+                    content=refined
+                )
 
         except Exception as e:
             contract["error"] = {"message": str(e)}

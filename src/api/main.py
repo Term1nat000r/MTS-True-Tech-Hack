@@ -2,7 +2,6 @@ from fastapi import FastAPI, HTTPException
 from starlette import status
 
 import uuid
-from pydantic import BaseModel
 
 
 # Импортируем ОРКЕСТРАТОР и реальные КЛАССЫ агентов
@@ -24,8 +23,8 @@ client = llm.get_instance()
 history_storage = SessionStorage()
 
 generator_agent = Generator(client=client)
-validator_agent = Validator(client=client)
-clarifier_agent = Clarifier(client=client)
+validator_agent = Validator(client=client, history_storage=history_storage)
+clarifier_agent = Clarifier(client=client, history_storage=history_storage)
 
 current_session_id = None
 
@@ -45,30 +44,28 @@ def read_root():
 # Твои тестовые эндпоинты (теперь работают с реальным AI)
 @app.get("/test_gen")
 async def test_agent_generator():
-    return generator_agent.generate("Напиши print('hello')", str(uuid.uuid4()))
+    return generator_agent.generate("Напиши print('hello')")
 
 @app.get("/test_val")
 async def test_agent_validator():
     # Проверка работы критика
-    task = Task(original_prompt="тест", request_id=str(uuid.uuid4()))
+    task = Task(original_prompt="тест")
     code = CodeResult(code="lua{ print('hello') }lua", iteration=1)
     return validator_agent.validate(task, code)
 
 @app.get("/test_cl")
 async def test_agent_clarifier():
     # Проверка работы уточнения промпта
-    return clarifier_agent.adapt("Сделай что-нибудь", str(uuid.uuid4()))
+    return clarifier_agent.adapt("Сделай что-нибудь")
 
 # Главный вход для жюри
 @app.post("/generate")
 async def generate_code(request: Request):
-    # 1. Генерируем ID запроса, если его нет
-    req_id = request.header.request_id or str(uuid.uuid4())
-
-    # 2. Запускаем "мозги" (оркестратор)
+    # Запускаем "мозги" (оркестратор)
     result = await orchestrator.run(
         task=request.payload.raw_prompt,
-        request_id=req_id
+        history=[],
+        session_id=""
     )
 
     # 3. Безопасно достаем код (проверяем, объект это или словарь)
@@ -91,8 +88,6 @@ async def generate_code(request: Request):
 async def generate_code(req: Request):
     global current_session_id
 
-    # 1. Генерируем ID запроса, если его нет
-    req_id = req.header.request_id or str(uuid.uuid4())
     session_id = req.header.session_id or current_session_id or str(uuid.uuid4())
 
     if not current_session_id:
@@ -111,8 +106,8 @@ async def generate_code(req: Request):
     # 2. Запускаем "мозги" (оркестратор)
     result = await orchestrator.run(
         task=task,
-        request_id=req_id,
-        history=history
+        history=history,
+        session_id=session_id
     )
 
     # Если при работе оркестратора произошла ошибка
@@ -133,7 +128,10 @@ async def generate_code(req: Request):
     if result.header.status == "clarification":
         # Добавляем ответ ассистента если нужно уточнение в историю
         history_storage.append_history(session_id=session_id, role="assistant", content=result.payload.display_text)
-        return {"session_id": session_id, "message": result.payload.display_text}
+        response = {"session_id": session_id, "message": result.payload.display_text}
+        if result.payload.content:
+            response["code"] = result.payload.content
+        return response
 
     # Добавляем ответ ассистента, если все гуд
     history_storage.append_history(session_id=session_id, role="assistant", content=result.payload.content)

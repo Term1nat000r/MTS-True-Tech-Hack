@@ -3,8 +3,8 @@ import subprocess
 import tempfile
 import os
 import time
-from typing import List, Optional
-from pydantic import BaseModel, Field
+from typing import Optional
+from pydantic import BaseModel
 from openai import OpenAI
 from src.api.config import Config
 from src.api.knowledge import get_validator_system_prompt
@@ -20,8 +20,9 @@ class CodeResult(BaseModel):
 
 
 class Validator:
-    def __init__(self, client: OpenAI):
+    def __init__(self, client: OpenAI, history_storage=None):
         self.client = client
+        self.history_storage = history_storage
         try:
             with open(Config.PROMPTS_DIR / "validator.txt", "r", encoding="utf-8") as f:
                 base_prompt = f.read().strip()
@@ -31,7 +32,12 @@ class Validator:
 
     @staticmethod
     def _strip_wrapper(code: str) -> str:
-        return code.replace("jsonString lua{", "").replace("}lua", "").strip()
+        s = code.strip()
+        if s.startswith("jsonString lua{"):
+            s = s[len("jsonString lua{"):]
+        if s.endswith("}lua"):
+            s = s[:-len("}lua")]
+        return s.strip()
 
     def _run_syntax_check(self, lua_code: str) -> Optional[str]:
         fd, path = tempfile.mkstemp(suffix=".lua")
@@ -48,7 +54,7 @@ class Validator:
             if os.path.exists(path):
                 os.remove(path)
 
-    def validate(self, task: Task, code_result: CodeResult) -> dict:
+    def validate(self, task: Task, code_result: CodeResult, session_id: str = "") -> dict:
         start = time.time()
         contract = {
             "header": {"source_agent": "validator", "timestamp": int(start), "status": "success"},
@@ -78,6 +84,13 @@ class Validator:
             if hasattr(response, "usage") and response.usage:
                 contract["metadata"]["usage"]["total_tokens"] = getattr(response.usage, "total_tokens", 0)
 
+            if not response.choices or not response.choices[0].message.content:
+                contract["header"]["status"] = "error"
+                contract["error"] = {"message": "Empty response from model"}
+                contract["payload"]["recommendation"] = "abort"
+                contract["metadata"]["usage"]["duration_ms"] = int((time.time() - start) * 1000)
+                return contract
+
             raw = response.choices[0].message.content.strip()
             if raw.startswith("```"):
                 raw = raw.strip("`").strip()
@@ -90,6 +103,13 @@ class Validator:
 
             if contract["payload"]["is_valid"]:
                 contract["payload"]["recommendation"] = "pass"
+                # Сохраняем готовый код в историю сессии
+                if self.history_storage and session_id:
+                    self.history_storage.append_history(
+                        session_id=session_id,
+                        role="validator",
+                        content=code_result.code
+                    )
             elif task.iteration >= 3:
                 contract["payload"]["recommendation"] = "abort"
                 contract["payload"]["issues"].append("Max iterations reached.")
