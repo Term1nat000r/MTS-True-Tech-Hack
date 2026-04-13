@@ -17,7 +17,7 @@ class Generator:
             base_prompt = f.read().strip()
         self.system_prompt = get_generator_system_prompt(base_prompt)
 
-    def generate(self, refined_prompt: str) -> dict:
+    def generate(self, refined_prompt: str, history: list = None) -> dict:
         start = time.time()
         contract = {
             "header": {"source_agent": "generator", "timestamp": int(start), "status": "error"},
@@ -27,11 +27,14 @@ class Generator:
         }
         raw_result = ""
         try:
+            messages = [{"role": "system", "content": self.system_prompt}]
+            for h in (history or []):
+                role = h.role if h.role in ("user", "assistant") else "assistant"
+                messages.append({"role": role, "content": h.content})
+            messages.append({"role": "user", "content": refined_prompt})
+
             response = self.client.chat.completions.create(
-                messages=[
-                    {"role": "system", "content": self.system_prompt},
-                    {"role": "user", "content": refined_prompt},
-                ],
+                messages=messages,
                 **Config.get_llm_params(),
             )
             contract["metadata"]["usage"]["duration_ms"] = int((time.time() - start) * 1000)

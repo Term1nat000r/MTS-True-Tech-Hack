@@ -13,7 +13,7 @@ class Orchestrator:
     async def run(self, task: str, history: list[History], session_id: str = "") -> OrchestratorOutput:
 
         # 1. Уточнение задачи
-        cl_res = self.clarifier.adapt(task, session_id=session_id)
+        cl_res = self.clarifier.adapt(task, history=history, session_id=session_id)
         if cl_res["header"]["status"] == "clarification":
             return OrchestratorOutput(
                 header=cl_res["header"],
@@ -32,20 +32,8 @@ class Orchestrator:
 
         refined_prompt = cl_res["payload"].get("refined_prompt") or task
 
-        # Достаём предыдущий код из истории (если это второй круг)
-        previous_code = None
-        for h in reversed(history):
-            if h.role == "validator":
-                previous_code = h.content
-                break
-
         # 2. Первая попытка генерации кода
-        if previous_code:
-            gen_prompt = f"Предыдущий код:\n{previous_code}\n\nПравки пользователя: {refined_prompt}\n\nИсправь код согласно правкам."
-        else:
-            gen_prompt = refined_prompt
-
-        gen_res = self.generator.generate(gen_prompt)
+        gen_res = self.generator.generate(refined_prompt, history=history)
 
         # Если генератор выдал ошибку
         if gen_res["header"]["status"] == "error":
@@ -83,7 +71,7 @@ class Orchestrator:
             issues = val_res["payload"].get("issues", [])
             retry_prompt = f"Исправь ошибки в Lua коде: {issues}\nТЗ: {refined_prompt}\nТекущий код: {code}"
 
-            gen_res = self.generator.generate(retry_prompt)
+            gen_res = self.generator.generate(retry_prompt, history=history)
             # Если генератор выдал ошибку
             if gen_res["header"]["status"] == "error":
                 return OrchestratorOutput(
@@ -100,8 +88,8 @@ class Orchestrator:
             if "clarification_message" not in gen_res["payload"]:
                 gen_res["payload"]["clarification_message"] = ""
 
-        # 4. Проверяем, видел ли пользователь код ранее (есть ли запись validator в истории)
-        user_already_reviewed = any(h.role == "validator" for h in history)
+        # 4. Проверяем, видел ли пользователь код ранее (есть ли ответ assistant в истории)
+        user_already_reviewed = any(h.role == "assistant" for h in history)
 
         if not user_already_reviewed:
             # Первый прогон — отправляем код пользователю на просмотр
