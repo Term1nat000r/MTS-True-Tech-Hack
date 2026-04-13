@@ -3,6 +3,8 @@ from starlette import status
 
 import uuid
 from pydantic import BaseModel
+
+
 # Импортируем ОРКЕСТРАТОР и реальные КЛАССЫ агентов
 from src.agents.orchestrator import Orchestrator
 from src.agents.generator import Generator
@@ -12,7 +14,9 @@ from src.api.llm_client import LLMClient
 
 from src.db.history_db import SessionStorage
 
+# Контракты запросов
 from src.agents.contracts.request_contract import Request
+from src.agents.contracts.change_session_request_contract import ChangeSessionRequest
 
 # Инициализируем клиент и реальных агентов
 llm = LLMClient()
@@ -94,12 +98,16 @@ async def generate_code(req: Request):
 
     if not current_session_id:
         current_session_id = session_id
+        if not req.header.session_id:
+            # Если не было текущей сессии и пользователь не выбрал сессию, то создать новую и добавить её в список сессий
+            history_storage.append_sessions(session_id=session_id, chat_name=session_id)
     elif req.header.session_id:
         current_session_id = req.header.session_id
 
+
     task = req.payload.raw_prompt
 
-    history = history_storage.get(session_id=session_id)
+    history = history_storage.get_session_history(session_id=session_id)
 
     # 2. Запускаем "мозги" (оркестратор)
     result = await orchestrator.run(
@@ -120,16 +128,62 @@ async def generate_code(req: Request):
         )
 
     # Добавляем запрос пользователя в историю
-    history_storage.append(session_id=session_id, role="user", content=task)
+    history_storage.append_history(session_id=session_id, role="user", content=task)
 
     # Вывод сообщения, если требуется уточнение
     if result.header.status == "clarification":
         # Добавляем ответ ассистента если нужно уточнение в историю
-        history_storage.append(session_id=session_id, role="assistant", content=result.payload.display_text)
+        history_storage.append_history(session_id=session_id, role="assistant", content=result.payload.display_text)
         return {"session_id": session_id, "message": result.payload.display_text}
 
     # Добавляем ответ ассистента, если все гуд
-    history_storage.append(session_id=session_id, role="assistant", content=result.payload.content)
+    history_storage.append_history(session_id=session_id, role="assistant", content=result.payload.content)
 
     # 4. Возвращаем ответ в формате, который ждет жюри
     return {"code": result.payload.content}
+
+# Возвращает историю определённой сессии
+@app.get("/get_history/{session_id}")
+async def get_history(session_id: str):
+    history = history_storage.get_session_history(session_id=session_id)
+
+    return {
+        "session_id" : session_id,
+        "history": [h.model_dump() for h in history]
+    }
+
+@app.get("/get_sessions")
+async def get_sessions():
+    sessions = history_storage.get_sessions()
+
+    return {
+        "sessions": sessions
+    }
+
+@app.get("/get_current_session")
+async def get_current_session():
+    return {"session_id": current_session_id}
+
+@app.post("/change_session")
+async def change_session(req: ChangeSessionRequest):
+    global current_session_id
+    new_session_id = req.payload.session_id
+
+    current_session_id = new_session_id
+
+    return {"session_id": new_session_id}
+
+@app.post("/create_session")
+async def create_session():
+    session_id = str(uuid.uuid4())
+    history_storage.append_sessions(session_id=session_id, chat_name=session_id)
+
+    return {"session_id": session_id, "chat_name": session_id}
+
+@app.delete("/delete_session/{session_id}")
+async def create_session(session_id: str):
+    global current_session_id
+    history_storage.delete_session(session_id=session_id)
+    current_session_id = None
+
+    return {"message": "Сессия успешно удалена"}
