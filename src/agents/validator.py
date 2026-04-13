@@ -103,6 +103,7 @@ class Validator:
 
             if contract["payload"]["is_valid"]:
                 contract["payload"]["recommendation"] = "pass"
+
             elif task.iteration >= 3:
                 contract["payload"]["recommendation"] = "abort"
                 contract["payload"]["issues"].append("Max iterations reached.")

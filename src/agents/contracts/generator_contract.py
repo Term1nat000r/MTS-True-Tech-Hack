@@ -11,7 +11,7 @@ class Header(BaseModel):
 class Payload(BaseModel):
     content: str
     explanation: str
-    language: str
+    language: str = "lua"
 
 class Usage(BaseModel):
     total_tokens: int
