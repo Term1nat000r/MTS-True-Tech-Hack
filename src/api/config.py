@@ -4,7 +4,7 @@ from pathlib import Path
 class Config:
     # Все, что ниже, должно иметь ОДИНАКОВЫЙ отступ (ровно 4 пробела)
     BASE_DIR = Path(__file__).resolve().parent
-    OLLAMA_URL = os.getenv("OLLAMA_API_URL", "http://192.168.1.67:11434/v1")
+    OLLAMA_URL = os.getenv("OLLAMA_API_URL", "http://localhost:11434/v1")
     API_KEY = os.getenv("LLM_API_KEY", "local-hackathon-key")
     
     # Директории
