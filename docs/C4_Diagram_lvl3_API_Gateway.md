@@ -1,3 +1,4 @@
+```mermaid
 flowchart TD
     subgraph API["API Gateway"]
         FastAPI["FastAPI App (main.py)<br/>Обрабатывает эндпоинты /generate, /test_*"]
@@ -14,3 +15,4 @@ flowchart TD
     Router -- "сохраняет историю (промпт, ответ)" --> Storage
     Storage -- "читает/пишет (SQL)" --> SessionDB
     Router -- "упаковывает результат" --> ResponseBuilder
+```
