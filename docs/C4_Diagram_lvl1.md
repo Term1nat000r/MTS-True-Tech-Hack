@@ -1,3 +1,4 @@
+```mermaid
 flowchart TD
     User["Разработчик / Жюри"]
     System["LocalScript\n(агентская система)"]
@@ -9,3 +10,4 @@ flowchart TD
     System -- "вызов LLM" --> Ollama
     System -- "запуск Lua кода" --> Docker
     System -- "чтение промптов, запись логов" --> FS
+```
