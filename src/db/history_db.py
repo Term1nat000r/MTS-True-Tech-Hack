@@ -48,7 +48,10 @@ class SessionStorage:
         cursor = self.conn.execute("SELECT * FROM chats")
         rows = cursor.fetchall()
 
-        return [row[1] for row in rows]
+        return [
+            {"session_id":row[0], "chat_name":row[1]}
+            for row in rows
+        ]
 
     def append_history(self, session_id: str, role: str, content: str):
         self.conn.execute("INSERT INTO history VALUES (?, ?, ?, ?)", (session_id, role, content, int(time.time())))

@@ -7,6 +7,7 @@ import uuid
 # Импортируем ОРКЕСТРАТОР и реальные КЛАССЫ агентов
 from src.agents.orchestrator import Orchestrator
 from src.agents.generator import Generator
+from src.agents.namer import Namer
 from src.agents.validator import Validator, Task, CodeResult
 from src.agents.clarifier import Clarifier
 from src.api.llm_client import LLMClient
@@ -25,6 +26,7 @@ history_storage = SessionStorage()
 generator_agent = Generator(client=client)
 validator_agent = Validator(client=client, history_storage=history_storage)
 clarifier_agent = Clarifier(client=client, history_storage=history_storage)
+namer_agent = Namer(client=client)
 
 current_session_id = None
 
@@ -90,16 +92,17 @@ async def generate_code(req: Request):
 
     session_id = req.header.session_id or current_session_id or str(uuid.uuid4())
 
+    task = req.payload.raw_prompt
+
     if not current_session_id:
         current_session_id = session_id
         if not req.header.session_id:
             # Если не было текущей сессии и пользователь не выбрал сессию, то создать новую и добавить её в список сессий
-            history_storage.append_sessions(session_id=session_id, chat_name=session_id)
+            chat_name = create_chat_name(raw_input=task)
+            history_storage.append_sessions(session_id=session_id, chat_name=chat_name)
     elif req.header.session_id:
         current_session_id = req.header.session_id
 
-
-    task = req.payload.raw_prompt
 
     history = history_storage.get_session_history(session_id=session_id)
 
@@ -172,9 +175,8 @@ async def change_session(session_id: str):
 @app.post("/create_session")
 async def create_session():
     session_id = str(uuid.uuid4())
-    history_storage.append_sessions(session_id=session_id, chat_name=session_id)
-
-    return {"session_id": session_id, "chat_name": session_id}
+    history_storage.append_sessions(session_id=session_id, chat_name="Новый диалог")
+    return {"session_id": session_id, "chat_name": "Новый диалог"}
 
 @app.delete("/delete_session/{session_id}")
 async def create_session(session_id: str):
@@ -191,5 +193,7 @@ async def close_current_session():
 
     return {"message": "Сессия успешно покинута"}
 
-@app.get("/create_chat_name")
-async def create_chat_name
+def create_chat_name(raw_input: str) -> str:
+    chat_name = namer_agent.generate_name(raw_input)
+
+    return chat_name
