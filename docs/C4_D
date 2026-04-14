@@ -1,3 +1,4 @@
+```mermaid
 %%{init: {"flowchart": {"curve": "step"}}}%%
 flowchart TB
     %% Стили
@@ -7,39 +8,39 @@ flowchart TB
     classDef external fill:#999999,stroke:#666666,color:#fff
     classDef database fill:#438dd5,stroke:#2b5a8e,color:#fff
 
-    User("👤 Пользователь\n[Person]\nВводит ТЗ / Отвечает на вопросы"):::person
+    User("Пользователь\n[Person]\nВводит ТЗ / Отвечает на вопросы"):::person
 
-    subgraph Client ["🖥️ Client Application"]
-        UI("✨ Web UI / CLI\n[Container]\nЧат с агентами"):::container
+    subgraph Client ["Client Application"]
+        UI("Web UI / CLI\n[Container]\nЧат с агентами"):::container
     end
 
-    subgraph SystemBoundary ["⚙️ LocalScript System (Backend)"]
+    subgraph SystemBoundary ["LocalScript System (Backend)"]
         
-        API("🌐 API Gateway (FastAPI)\n[Component]\nРоутинг (/generate)"):::component
-        Contracts("📄 Contracts Layer (Pydantic)\n[Component]\nВалидация JSON: Header, Payload, Metadata"):::component
-        Orchestrator("🔄 Orchestrator\n[Component]\nКонтроллер Agentic Loop"):::component
+        API("API Gateway (FastAPI)\n[Component]\nРоутинг (/generate)"):::component
+        Contracts("Contracts Layer (Pydantic)\n[Component]\nВалидация JSON: Header, Payload, Metadata"):::component
+        Orchestrator("Orchestrator\n[Component]\nКонтроллер Agentic Loop"):::component
         
-        subgraph Storage ["💾 Storage & Context"]
+        subgraph Storage ["Storage & Context"]
             direction LR
-            DB[("🗄️ SQLite\n(Session History)\nПамять диалогов")]:::database
-            VectorDB[("🧠 RAG DB\n(Chroma)\nЭмбеддинги примеров кода")]:::database
-            Logs[("📊 Local FS\n(Logs / Temp)\nЛоги, Метрики, .lua файлы")]:::database
+            DB[("SQLite\n(Session History)\nПамять диалогов")]:::database
+            VectorDB[("RAG DB\n(Chroma)\nЭмбеддинги примеров кода")]:::database
+            Logs[("Local FS\n(Logs / Temp)\nЛоги, Метрики, .lua файлы")]:::database
         end
         
-        LLMClient("🔌 LLM Client\n[Component]\nЕдиный интерфейс к Ollama"):::component
+        LLMClient("LLM Client\n[Component]\nЕдиный интерфейс к Ollama"):::component
         
-        subgraph Agents ["🤖 Multi-Agent System"]
+        subgraph Agents ["Multi-Agent System"]
             direction TB
-            Clarifier("🔍 Clarifier Agent\nАнализ ТЗ (System Analyst)"):::component
-            Generator("✍️ Generator Agent\nГенерация (Senior Lua Dev)"):::component
-            Validator("🛡️ Validator Agent\nАудит кода (QA / Critic)"):::component
+            Clarifier("Clarifier Agent\nАнализ ТЗ (System Analyst)"):::component
+            Generator("Generator Agent\nГенерация (Senior Lua Dev)"):::component
+            Validator("Validator Agent\nАудит кода (QA / Critic)"):::component
         end
     end
 
-    subgraph External ["🔌 Внешние (Локальные) Процессы"]
+    subgraph External ["Внешние (Локальные) Процессы"]
         direction LR
-        Ollama("🧠 Ollama API\n[Local Inference]\nQwen2.5/Llama3"):::external
-        LuaSandbox("📦 Sandbox\n[Process: luac]\nИзолированная проверка"):::external
+        Ollama("Ollama API\n[Local Inference]\nQwen2.5/Llama3"):::external
+        LuaSandbox("Sandbox\n[Process: luac]\nИзолированная проверка"):::external
     end
 
     %% Основной поток: Запрос
@@ -84,3 +85,4 @@ flowchart TB
     Validator -. "Пишет temp.lua" .-> Logs
 
     linkStyle default stroke:#444,stroke-width:2px;
+```
