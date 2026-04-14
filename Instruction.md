@@ -166,4 +166,4 @@ Ctrl + C в терминале
 
 ---
 
-# ✅ Готово! Откройте Swagger UI на [https://localhost:8000/docs](https://localhost:8000/docs)
+# ✅ Готово! Откройте Swagger UI на [http://localhost:8000/docs](https://localhost:8000/docs)

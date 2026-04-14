@@ -62,31 +62,6 @@ async def test_agent_clarifier():
 
 # Главный вход для жюри
 @app.post("/generate")
-async def generate_code(request: Request):
-    # Запускаем "мозги" (оркестратор)
-    result = await orchestrator.run(
-        task=request.payload.raw_prompt,
-        history=[],
-        session_id=""
-    )
-
-    # 3. Безопасно достаем код (проверяем, объект это или словарь)
-    content = ""
-    try:
-        # Если оркестратор вернул объект OrchestratorOutput
-        if hasattr(result, 'payload'):
-            content = result.payload.content
-        # Если оркестратор вернул обычный словарь
-        elif isinstance(result, dict):
-            content = result.get("payload", {}).get("content", "")
-    except Exception as e:
-        print(f"Ошибка при разборе ответа: {e}")
-        content = "Ошибка генерации кода"
-
-    # 4. Возвращаем ответ в формате, который ждет жюри
-    return {"code": content}
-
-@app.post("/test_generate")
 async def generate_code(req: Request):
     global current_session_id
 
