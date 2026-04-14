@@ -190,3 +190,6 @@ async def close_current_session():
     current_session_id = None
 
     return {"message": "Сессия успешно покинута"}
+
+@app.get("/create_chat_name")
+async def create_chat_name
