@@ -136,12 +136,34 @@ docker-compose up --build
 docker-compose up -d --build
 ```
 
-## 7.3 Остановка
+## 7.2 Запуск Ollama
+
+```bash
+ollama serve
+```
+
+Проверка:
+
+```bash
+curl http://localhost:11434
+```
+
+---
+
+# 🚀 8. Остановка проекта
+
+## 8.1 Остановка Docker
 
 ```bash
 docker-compose down
 ```
 
+## 8.2 Остановка Ollama
+
+```bash
+Ctrl + C в терминале
+```
+
 ---
 
-# ✅ Готово
+# ✅ Готово! Откройте Swagger UI на [https://localhost:8000/docs](https://localhost:8000/docs)
