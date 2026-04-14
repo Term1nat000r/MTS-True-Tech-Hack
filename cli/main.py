@@ -147,7 +147,8 @@ async def get_chats(client: httpx.AsyncClient):
 
 def show_chats(chats):
     for (i, chat) in enumerate(chats, start=1):
-        print(f"{i}. {chat}")
+        chat_name = chat["chat_name"]
+        print(f"{i}. {chat_name}")
     print("──────────────────────────────────────")
 
 async def choose_chat(client: httpx.AsyncClient):
@@ -163,7 +164,7 @@ async def choose_chat(client: httpx.AsyncClient):
             print("Неправильный ввод, попробуйте ещё раз...")
             choice = get_choice("Выберите номер чата: ")
 
-        session_id = chats[choice - 1]
+        session_id = chats[choice - 1]["session_id"]
 
         await change_chat(client, session_id)
 
@@ -182,7 +183,7 @@ async def delete_chat(client: httpx.AsyncClient):
             print("Неправильный ввод, попробуйте ещё раз...")
             choice = get_choice("Выберите номер чата: ")
 
-        session_id = chats[choice - 1]
+        session_id = chats[choice - 1]["session_id"]
 
         await client.delete(f"/delete_session/{session_id}")
         print("Чат успешно удалён")
