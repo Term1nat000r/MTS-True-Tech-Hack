@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 class Header(BaseModel):
     source_agent: str
-    request_id: str
+
     timestamp: int
     status: str
 

@@ -56,6 +56,19 @@ jsonString lua{
     end
     return result
 }lua
+
+Пример 4: Фильтр по конкретному значению поля
+Запрос: "Отфильтруй массив wf.vars.orders, оставив только элементы где status равен active"
+Код:
+jsonString lua{
+    local result = _utils.array.new()
+    for _, order in ipairs(wf.vars.orders) do
+        if order.status == "active" then
+            table.insert(result, order)
+        end
+    end
+    return result
+}lua
 """
 
 def get_generator_system_prompt(base_prompt: str) -> str:

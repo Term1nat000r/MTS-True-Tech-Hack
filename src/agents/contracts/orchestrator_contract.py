@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 class Header(BaseModel):
     source_agent: str = "orchestrator"
-    request_id: str
+
     timestamp: int
     status: str
 
@@ -28,9 +28,28 @@ class Usage(BaseModel):
 class Metadata(BaseModel):
     usage: Usage
 
+class ErrorPayload(BaseModel):
+    display_text: str
+    failed_agent: str
+    content: str = ""
+    language: str = "lua"
+    explanation: str = ""
+    clarification_message: str = ""
+
+
+class ClarificationPayload(BaseModel):
+    display_text: str
+    refined_prompt: str | None = None
+    is_ready: bool = False
+    content: str = ""
+    language: str = "lua"
+    explanation: str = ""
+    clarification_message: str = ""
+
+
 class OrchestratorOutput(BaseModel):
     header: Header
-    payload: Payload
+    payload: Payload | ErrorPayload | ClarificationPayload
     metadata: Metadata
     error: str | None = None
 

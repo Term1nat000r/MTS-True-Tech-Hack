@@ -2,23 +2,22 @@ import os
 from pathlib import Path
 
 class Config:
-    # --- ИНФРАСТРУКТУРА ---
     BASE_DIR = Path(__file__).resolve().parent
-    OLLAMA_URL = os.getenv("OLLAMA_API_URL", "http://localhost:11434/v1")
+    OLLAMA_URL = os.getenv("OLLAMA_API_URL", "http://host.docker.internal:11434/v1")
     API_KEY = os.getenv("LLM_API_KEY", "local-hackathon-key")
     
     # Директории
     LOGS_DIR = BASE_DIR / "logs"
-    PROMPTS_DIR = BASE_DIR / "prompts"
+    PROMPTS_DIR = BASE_DIR.parent / "agents" / "prompts"    
 
     # --- ТРЕБОВАНИЯ ПЛАТФОРМЫ ---
     VRAM_LIMIT_GB = 8 
-    CONTEXT_WINDOW = 4096 
-    MAX_TOKENS_PER_RESPONSE = 1024
-    REQUEST_TIMEOUT = 120.0
+    CONTEXT_WINDOW = 4096
+    MAX_TOKENS_PER_RESPONSE = 2048
+    REQUEST_TIMEOUT = 300.0
 
     # --- НАСТРОЙКИ МОДЕЛИ ---
-    MODEL_NAME = "qwen2.5:7b"
+    MODEL_NAME = "qwen2.5-coder:7b"
     TEMPERATURE = 0.1
     SEED = 42
     
@@ -72,6 +71,7 @@ class Config:
             "model": cls.MODEL_NAME,
             "temperature": cls.TEMPERATURE,
             "max_tokens": cls.MAX_TOKENS_PER_RESPONSE,
+            "timeout": cls.REQUEST_TIMEOUT,
             "seed": cls.SEED,
             "response_format": cls.RESPONSE_FORMAT,
             "extra_body": {
@@ -83,6 +83,5 @@ class Config:
             }
         }
 
-# Создаем папки автоматически
 Config.LOGS_DIR.mkdir(exist_ok=True)
 Config.PROMPTS_DIR.mkdir(exist_ok=True)
