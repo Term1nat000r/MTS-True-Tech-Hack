@@ -373,7 +373,7 @@ erDiagram
 | Temperature | 0.1 |
 | Top-K / Top-P | 40 / 0.9 |
 | Таймаут | 300 сек |
-| VRAM | 8 ГБ |
+| VRAM | 5,5 ГБ |
 
 ---
 
