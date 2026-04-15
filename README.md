@@ -71,6 +71,68 @@
 
 ---
 
+## Жизненный цикл запроса
+
+Sequence-диаграмма показывает полный путь запроса от пользователя до ответа:
+
+```mermaid
+sequenceDiagram
+    actor User as Пользователь
+    participant API as FastAPI
+    participant DB as SQLite
+    participant Orch as Orchestrator
+    participant Clar as Clarifier
+    participant Gen as Generator
+    participant Val as Validator
+    participant LLM as Ollama (Qwen 2.5)
+
+    User->>API: POST /generate
+    API->>DB: Создать/получить сессию
+    API->>DB: Загрузить историю диалога
+    API->>Orch: run(task, history)
+
+    Orch->>Clar: adapt(raw_prompt, history)
+    Clar->>LLM: Анализ запроса
+    LLM-->>Clar: JSON-ответ
+
+    alt Нужно уточнение
+        Clar-->>Orch: status: clarification
+        Orch-->>API: Уточняющий вопрос
+        API->>DB: Сохранить в историю
+        API-->>User: Вопрос от системы
+    else Задача понятна
+        Clar-->>Orch: refined_prompt
+
+        Orch->>Gen: generate(refined_prompt)
+        Gen->>LLM: Генерация Lua-кода
+        LLM-->>Gen: Код + объяснение
+        Gen-->>Orch: Lua-код
+
+        loop До 3 итераций
+            Orch->>Val: validate(code, task)
+            Val->>Val: luac -p (синтаксис)
+            Val->>LLM: Семантическая проверка
+            LLM-->>Val: is_valid, issues
+
+            alt Код валиден
+                Val-->>Orch: pass ✓
+            else Код не валиден
+                Val-->>Orch: retry + список ошибок
+                Orch->>Gen: generate(ошибки + задача)
+                Gen->>LLM: Исправление кода
+                LLM-->>Gen: Исправленный код
+                Gen-->>Orch: Новая версия кода
+            end
+        end
+
+        Orch-->>API: Финальный результат
+        API->>DB: Сохранить в историю
+        API-->>User: Lua-код + объяснение
+    end
+```
+
+---
+
 ## Как работает агентский цикл
 
 При каждом запросе пользователя Orchestrator запускает следующий pipeline:
@@ -89,6 +151,24 @@
 ```
 
 Максимум **3 итерации** генерации-валидации. Если за 3 попытки код не прошёл проверку — возвращается лучший результат с пометкой.
+
+### Диаграмма состояний валидации
+
+```mermaid
+stateDiagram-v2
+    [*] --> Clarifier
+    Clarifier --> УточняющийВопрос: Задача неясна
+    УточняющийВопрос --> [*]: Ответ пользователю
+    Clarifier --> Generator: Задача понятна
+
+    Generator --> Validator: Код сгенерирован
+    Validator --> Успех: is_valid = true
+    Validator --> Generator: is_valid = false\n(итерация < 3)
+    Validator --> Abort: is_valid = false\n(итерация = 3)
+
+    Успех --> [*]: Код возвращён
+    Abort --> [*]: Лучший результат + предупреждение
+```
 
 ---
 
@@ -220,6 +300,89 @@ python cli/main.py
 
 ---
 
+## Безопасность и ограничения платформы
+
+Генерируемый Lua-код проходит строгие проверки перед выдачей пользователю:
+
+```mermaid
+graph LR
+    A[Сгенерированный код] --> B{luac -p}
+    B -->|Синтаксис OK| C{LLM-валидатор}
+    B -->|Ошибка| D[Retry с описанием ошибки]
+    C -->|Все проверки пройдены| E[✓ Код выдан пользователю]
+    C -->|Нарушение| D
+
+    style E fill:#2d6a2d,color:#fff
+    style D fill:#8b4513,color:#fff
+```
+
+| Правило | Что проверяется |
+|---------|----------------|
+| Формат обёртки | Код обёрнут в `jsonString lua{ ... }lua` |
+| Запрещённые вызовы | Нет `os.*`, `io.*`, `load`, `dofile` |
+| Доступ к переменным | Только через `wf.vars` / `wf.initVariables` |
+| Инициализация массивов | Через `_utils.array.new()` |
+| Целостность данных | Нет потери данных при преобразованиях типов |
+
+---
+
+## Модель взаимодействия агентов
+
+```mermaid
+graph TB
+    subgraph Orchestrator["🎯 Orchestrator"]
+        direction TB
+        O[Координатор]
+    end
+
+    subgraph Agents["Агенты"]
+        C["💬 Clarifier<br/><small>Уточнение задачи</small>"]
+        G["⚙️ Generator<br/><small>Генерация Lua</small>"]
+        V["🔍 Validator<br/><small>Проверка кода</small>"]
+        N["📝 Namer<br/><small>Название чата</small>"]
+    end
+
+    subgraph Infra["Инфраструктура"]
+        LLM["🤖 Ollama<br/>Qwen 2.5-Coder 7B"]
+        DB["🗄️ SQLite<br/>Сессии и история"]
+        LUA["🔧 luac<br/>Синтаксис-чекер"]
+    end
+
+    O -->|1. adapt| C
+    O -->|2. generate| G
+    O -->|3. validate| V
+    O -.->|при создании чата| N
+
+    C --> LLM
+    G --> LLM
+    V --> LLM
+    V --> LUA
+    N --> LLM
+
+    O --> DB
+```
+
+---
+
+## Схема данных
+
+```mermaid
+erDiagram
+    CHATS {
+        text session_id PK
+        text chat_name
+    }
+    HISTORY {
+        text session_id FK
+        text role
+        text content
+        integer timestamp
+    }
+    CHATS ||--o{ HISTORY : "содержит"
+```
+
+---
+
 ## Стек технологий
 
 | Компонент | Технология |
@@ -329,11 +492,42 @@ MTS-True-Tech-Hack/
 │
 ├── docs/                        # Документация и схемы
 ├── data/                        # SQLite БД (создаётся автоматически)
-├── sandbox/                     # Песочница для Lua
-│
 ├── Dockerfile
 ├── docker-compose.yml
 ├── requirements.txt
+├── .dockerignore
 ├── Instruction.md               # Подробная инструкция по установке
 └── README.md
 ```
+
+---
+
+## Формат обмена данными
+
+Все агенты обмениваются данными через единый контракт:
+
+```
+┌─────────────────────────────────────────────┐
+│                AgentOutput                  │
+├─────────────────────────────────────────────┤
+│  header                                     │
+│  ├── source_agent: "generator"              │
+│  ├── timestamp: 1713168000                  │
+│  └── status: "success" | "error"            │
+├─────────────────────────────────────────────┤
+│  payload                                    │
+│  ├── content: "jsonString lua{...}lua"      │
+│  ├── explanation: "Код фильтрует массив..." │
+│  └── language: "lua"                        │
+├─────────────────────────────────────────────┤
+│  metadata                                   │
+│  ├── model: "qwen2.5-coder:7b"             │
+│  └── usage                                  │
+│      ├── total_tokens: 1024                 │
+│      └── duration_ms: 3200                  │
+├─────────────────────────────────────────────┤
+│  error: null | "описание ошибки"            │
+└─────────────────────────────────────────────┘
+```
+
+Каждый агент (Clarifier, Generator, Validator, Namer) имеет свою специализацию payload, но общая структура `Header + Payload + Metadata + Error` едина для всех — это упрощает отладку и расширение системы.
